@@ -32,6 +32,7 @@ typedef struct _HyprMenuConfig {
   int corner_radius;
   int border_width;
   char *border_color;
+  int border_corner_radius; // Border rounded corners
   
   // AGS-style effects
   gboolean blur_enabled;

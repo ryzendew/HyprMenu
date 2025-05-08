@@ -84,6 +84,7 @@ set_defaults(HyprMenuConfig *config)
   config->corner_radius = 12;
   config->border_width = 5;
   config->border_color = g_strdup("rgba(31, 0, 88, 0.1)");
+  config->border_corner_radius = 12;
   
   // AGS-style effects
   config->blur_enabled = TRUE;
@@ -244,6 +245,7 @@ hyprmenu_config_load()
     config->border_width = g_key_file_get_integer(keyfile, "Style", "border_width", NULL);
     g_free(config->border_color);
     config->border_color = g_key_file_get_string(keyfile, "Style", "border_color", NULL);
+    config->border_corner_radius = g_key_file_get_integer(keyfile, "Style", "border_corner_radius", NULL);
     
     // AGS-style effects
     config->blur_enabled = g_key_file_get_boolean(keyfile, "Style", "blur_enabled", NULL);
@@ -374,6 +376,7 @@ hyprmenu_config_save_with_error(GError **error)
   g_key_file_set_integer(keyfile, "Style", "corner_radius", config->corner_radius);
   g_key_file_set_integer(keyfile, "Style", "border_width", config->border_width);
   g_key_file_set_string(keyfile, "Style", "border_color", config->border_color);
+  g_key_file_set_integer(keyfile, "Style", "border_corner_radius", config->border_corner_radius);
   
   // AGS-style effects
   g_key_file_set_boolean(keyfile, "Style", "blur_enabled", config->blur_enabled);
@@ -463,10 +466,16 @@ hyprmenu_config_apply_css()
   g_string_append_printf(css, 
     ".hyprmenu-window {\n"
     "  background-color: %s;\n"
-    "  border-radius: %dpx;\n"
-    "  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);\n",
+    "  border-radius: %dpx; /* main window radius */\n"
+    "  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);\n"
+    "  border: %dpx solid %s;\n"
+    "  border-radius: %dpx; /* border radius, takes precedence in GTK */\n"
+    "}\n",
     config->background_color,
-    config->corner_radius);
+    config->corner_radius,
+    config->border_width,
+    config->border_color,
+    config->border_corner_radius);
   
   // Add AGS-style blur effects if enabled
   if (config->blur_enabled) {
@@ -494,12 +503,6 @@ hyprmenu_config_apply_css()
         config->transparency_shadow_radius,
         config->transparency_shadow_color);
     }
-  }
-  
-  if (config->border_width > 0) {
-    g_string_append_printf(css, 
-      "  border: %dpx solid %s;\n",
-      config->border_width, config->border_color);
   }
   
   g_string_append(css, "}\n");
