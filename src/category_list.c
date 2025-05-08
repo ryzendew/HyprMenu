@@ -2,6 +2,23 @@
 #include "config.h"
 #include "app_entry.h"
 
+static void
+on_list_row_clicked(GtkGestureClick *gesture,
+                    gint n_press,
+                    double x,
+                    double y,
+                    gpointer user_data)
+{
+  (void)gesture;  // Silence unused parameter warning
+  (void)n_press;  // Silence unused parameter warning
+  (void)x;        // Silence unused parameter warning
+  (void)y;        // Silence unused parameter warning
+  
+  // Launch the app using the stored reference
+  HyprMenuAppEntry *app_entry = HYPRMENU_APP_ENTRY(user_data);
+  hyprmenu_app_entry_launch(app_entry);
+}
+
 struct _HyprMenuCategoryList
 {
   GtkBox parent_instance;
@@ -45,7 +62,7 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   /* Create flow box for grid view */
   self->all_apps_grid = gtk_flow_box_new();
   gtk_flow_box_set_selection_mode(GTK_FLOW_BOX(self->all_apps_grid), GTK_SELECTION_NONE);
-  gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), 4);
+  gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), 7);
   
   /* Force items to their native size rather than trying to make them homogeneous */
   gtk_flow_box_set_homogeneous(GTK_FLOW_BOX(self->all_apps_grid), FALSE);
@@ -131,15 +148,12 @@ hyprmenu_category_list_add_category (HyprMenuCategoryList *self,
     gtk_flow_box_append(GTK_FLOW_BOX(self->all_apps_grid), app_widget);
     return;
   }
-  
-  /* List view layout - ensure app widget is in list layout mode */
-  hyprmenu_app_entry_set_grid_layout(HYPRMENU_APP_ENTRY(app_widget), FALSE);
-  
-  /* List view logic */
-  GtkWidget *category_box = NULL;
+
+  /* LIST VIEW IMPLEMENTATION */
+  HyprMenuAppEntry *entry = HYPRMENU_APP_ENTRY(app_widget);
   
   /* Find existing category box */
-  category_box = g_hash_table_lookup(self->category_boxes, category_name);
+  GtkWidget *category_box = g_hash_table_lookup(self->category_boxes, category_name);
   
   /* Create new category box if not found */
   if (!category_box) {
@@ -163,9 +177,52 @@ hyprmenu_category_list_add_category (HyprMenuCategoryList *self,
     /* Store in hash table */
     g_hash_table_insert (self->category_boxes, g_strdup(category_name), category_box);
   }
+
+  /* Create a custom row for this app */
+  GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+  gtk_widget_add_css_class(row, "hyprmenu-list-row");
+  gtk_widget_set_hexpand(row, TRUE);
   
-  /* Add app widget to category box */
-  gtk_box_append (GTK_BOX (category_box), app_widget);
+  /* Get app info directly */
+  const char *app_name = hyprmenu_app_entry_get_app_name(entry);
+  GDesktopAppInfo *app_info = hyprmenu_app_entry_get_app_info(entry);
+  
+  /* Create and add icon */
+  GtkWidget *icon = gtk_image_new();
+  GIcon *gicon = NULL;
+  
+  if (app_info) {
+    gicon = g_app_info_get_icon(G_APP_INFO(app_info));
+  }
+  
+  if (gicon) {
+    gtk_image_set_from_gicon(GTK_IMAGE(icon), gicon);
+  } else {
+    gtk_image_set_from_icon_name(GTK_IMAGE(icon), "application-x-executable");
+  }
+  
+  gtk_image_set_pixel_size(GTK_IMAGE(icon), 24);
+  gtk_widget_set_margin_start(icon, 4);
+  gtk_widget_add_css_class(icon, "hyprmenu-app-icon");
+  
+  /* Create label with app name */
+  GtkWidget *label = gtk_label_new(app_name);
+  gtk_widget_set_hexpand(label, TRUE);
+  gtk_label_set_xalign(GTK_LABEL(label), 0);
+  gtk_widget_set_margin_start(label, 8);
+  gtk_widget_add_css_class(label, "hyprmenu-app-name");
+  
+  /* Add icon and label to row */
+  gtk_box_append(GTK_BOX(row), icon);
+  gtk_box_append(GTK_BOX(row), label);
+  
+  /* Connect click handler */
+  GtkGesture *gesture = gtk_gesture_click_new();
+  g_signal_connect(gesture, "pressed", G_CALLBACK(on_list_row_clicked), entry);
+  gtk_widget_add_controller(row, GTK_EVENT_CONTROLLER(gesture));
+  
+  /* Add row to category box */
+  gtk_box_append(GTK_BOX(category_box), row);
 }
 
 GtkWidget *
@@ -189,45 +246,50 @@ hyprmenu_category_list_set_grid_view (HyprMenuCategoryList *self, gboolean use_g
   
   /* Update the flow box column count (in case config changed) */
   if (use_grid_view) {
-    // Always enforce 4 columns in grid view
-    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), 4);
+    // Use 7 columns in grid view to better use the 800x600 space
+    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), 7);
   }
   
   /* Show/hide the appropriate view */
   if (use_grid_view) {
-    /* Grid view - collect all app widgets and move them to the grid */
+    /* Grid view - collect all app entries from list rows and move them to the grid */
     GList *app_widgets = NULL;
     
-    /* First, collect all app widgets from categories */
+    /* First, collect all app widgets from category rows */
     if (self->category_boxes) {
+      g_print("Moving from list view to grid view\n");
+      
       GHashTableIter iter;
       gpointer key, value;
       
       g_hash_table_iter_init(&iter, self->category_boxes);
       while (g_hash_table_iter_next(&iter, &key, &value)) {
-        GtkWidget *box = GTK_WIDGET(value);
-        if (box) {
-          GtkWidget *child = gtk_widget_get_first_child(box);
+        GtkWidget *category_box = GTK_WIDGET(value);
+        if (category_box) {
+          // Skip first child (category title)
+          GtkWidget *child = gtk_widget_get_first_child(category_box);
+          if (child) child = gtk_widget_get_next_sibling(child);
+          
           while (child) {
             GtkWidget *next = gtk_widget_get_next_sibling(child);
-            /* Skip the category label (first child) */
-            if (!GTK_IS_LABEL(child)) {
-              /* Set to grid layout */
-              if (HYPRMENU_IS_APP_ENTRY(child)) {
-                hyprmenu_app_entry_set_grid_layout(HYPRMENU_APP_ENTRY(child), TRUE);
-                
-                /* Remove from category and add to our list */
-                gtk_box_remove(GTK_BOX(box), child);
-                app_widgets = g_list_append(app_widgets, child);
-              }
+            
+            // Get the app_widget from the list row
+            GtkWidget *app_widget = g_object_get_data(G_OBJECT(child), "app-widget");
+            if (app_widget) {
+              // Prepare for grid view
+              hyprmenu_app_entry_set_grid_layout(HYPRMENU_APP_ENTRY(app_widget), TRUE);
+              app_widgets = g_list_append(app_widgets, app_widget);
             }
+            
+            // Remove the row from category
+            gtk_box_remove(GTK_BOX(category_box), child);
             child = next;
           }
         }
       }
     }
     
-    /* Now add all app widgets to the grid */
+    /* Add all app entries to the grid */
     for (GList *l = app_widgets; l != NULL; l = l->next) {
       gtk_flow_box_append(GTK_FLOW_BOX(self->all_apps_grid), GTK_WIDGET(l->data));
     }
@@ -240,48 +302,57 @@ hyprmenu_category_list_set_grid_view (HyprMenuCategoryList *self, gboolean use_g
     gtk_widget_set_visible(self->main_box, FALSE);
     gtk_widget_set_visible(self->all_apps_grid, TRUE);
   } else {
-    /* List view - move app widgets from grid back to categories */
-    GList *app_widgets = NULL;
+    /* List view - move app entries from grid back to categories */
+    g_print("Moving from grid view to list view\n");
     
-    /* First, collect all app widgets from the grid */
+    /* Collect all app entries from the grid */
+    GHashTable *category_app_entries = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    
     GtkWidget *child = gtk_widget_get_first_child(self->all_apps_grid);
     while (child) {
       GtkWidget *next = gtk_widget_get_next_sibling(child);
+      
       if (HYPRMENU_IS_APP_ENTRY(child)) {
         HyprMenuAppEntry *entry = HYPRMENU_APP_ENTRY(child);
-        
-        /* Set to list layout */
-        hyprmenu_app_entry_set_grid_layout(entry, FALSE);
         
         /* Get the first category */
         const char **categories = hyprmenu_app_entry_get_categories(entry);
         const char *category = categories && categories[0] ? categories[0] : "Other";
         
-        /* Store with its category */
-        app_widgets = g_list_append(app_widgets, g_object_new(
-          G_TYPE_OBJECT,
-          "app-widget", entry,
-          "category", category,
-          NULL));
+        /* Get or create list for this category */
+        GSList *category_entries = g_hash_table_lookup(category_app_entries, category);
+        category_entries = g_slist_append(category_entries, entry);
+        g_hash_table_insert(category_app_entries, g_strdup(category), category_entries);
         
         /* Remove from grid */
         gtk_flow_box_remove(GTK_FLOW_BOX(self->all_apps_grid), child);
       }
+      
       child = next;
     }
     
-    /* Add app widgets back to appropriate categories */
-    for (GList *l = app_widgets; l != NULL; l = l->next) {
-      GObject *obj = G_OBJECT(l->data);
-      GtkWidget *app_widget = GTK_WIDGET(g_object_get_data(obj, "app-widget"));
-      const char *category = g_object_get_data(obj, "category");
+    /* Create category lists and add app entries */
+    GList *categories = g_hash_table_get_keys(category_app_entries);
+    categories = g_list_sort(categories, (GCompareFunc)g_ascii_strcasecmp);
+    
+    for (GList *l = categories; l != NULL; l = l->next) {
+      const char *category_name = l->data;
+      GSList *entries = g_hash_table_lookup(category_app_entries, category_name);
       
-      if (app_widget && category) {
-        hyprmenu_category_list_add_category(self, category, app_widget);
+      // Sort entries by name
+      entries = g_slist_sort(entries, (GCompareFunc)hyprmenu_app_entry_compare_by_name);
+      
+      // Add each entry to its category
+      for (GSList *entry_item = entries; entry_item != NULL; entry_item = entry_item->next) {
+        HyprMenuAppEntry *entry = HYPRMENU_APP_ENTRY(entry_item->data);
+        hyprmenu_category_list_add_category(self, category_name, GTK_WIDGET(entry));
       }
-      g_object_unref(obj);
+      
+      g_slist_free(entries);
     }
-    g_list_free(app_widgets);
+    
+    g_list_free(categories);
+    g_hash_table_destroy(category_app_entries);
     
     /* Set visibility */
     gtk_widget_set_visible(self->all_apps_grid, FALSE);

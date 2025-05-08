@@ -67,7 +67,9 @@ on_click_outside(GtkGestureClick *gesture,
   graphene_rect_t bounds;
   
   // Get the widget's bounds
-  gtk_widget_compute_bounds(widget, widget, &bounds);
+  if (!gtk_widget_compute_bounds(widget, widget, &bounds)) {
+    return;  // Failed to compute bounds
+  }
   
   // Check if the click is outside the widget's bounds
   if (x < bounds.origin.x || y < bounds.origin.y || 
@@ -196,12 +198,16 @@ hyprmenu_app_grid_refresh (HyprMenuAppGrid *self)
   /* Get all desktop apps */
   g_print("hyprmenu_app_grid_refresh: Getting all applications\n");
   GList *all_apps = g_app_info_get_all();
-  g_print("hyprmenu_app_grid_refresh: Found %d applications\n", g_list_length(all_apps));
+  int total_apps = g_list_length(all_apps);
+  g_print("hyprmenu_app_grid_refresh: Found %d applications total\n", total_apps);
   
   // Create a hash table to store apps by category
   GHashTable *category_apps = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
   
   int valid_count = 0;
+  int desktop_app_count = 0;
+  int shown_app_count = 0;
+  
   for (GList *l = all_apps; l != NULL; l = l->next) {
     GAppInfo *app_info = G_APP_INFO(l->data);
     
@@ -209,17 +215,26 @@ hyprmenu_app_grid_refresh (HyprMenuAppGrid *self)
     if (!G_IS_DESKTOP_APP_INFO(app_info)) {
       continue;
     }
-      
+    
+    desktop_app_count++;
+    
     /* Skip if shouldn't be shown */
     if (!g_app_info_should_show(app_info)) {
       continue;
     }
     
+    shown_app_count++;
+    
     /* Validate app info */
     const char *app_name = g_app_info_get_name(app_info);
     const char *app_id = g_app_info_get_id(app_info);
     
+    g_print("Processing app: name=%s, id=%s\n", 
+            app_name ? app_name : "(null)", 
+            app_id ? app_id : "(null)");
+    
     if (!app_name || !app_id || app_name[0] == '\0' || app_id[0] == '\0') {
+      g_print("  Skipping app with invalid name or id\n");
       continue;
     }
     
@@ -228,12 +243,14 @@ hyprmenu_app_grid_refresh (HyprMenuAppGrid *self)
     
     /* Skip if entry creation failed */
     if (!entry) {
+      g_print("  Entry creation failed for app: %s\n", app_name);
       continue;
     }
     
     /* Verify the entry was created properly */
     const char *entry_name = hyprmenu_app_entry_get_app_name(entry);
     if (!entry_name || entry_name[0] == '\0') {
+      g_print("  Created entry has invalid name\n");
       g_object_unref(entry);
       continue;
     }
@@ -250,11 +267,19 @@ hyprmenu_app_grid_refresh (HyprMenuAppGrid *self)
       primary_category = categories[0];
     }
     
+    g_print("  Added app '%s' to category '%s'\n", entry_name, primary_category);
+    
     // Get or create the list for this category
     GSList *category_list = g_hash_table_lookup(category_apps, primary_category);
     category_list = g_slist_append(category_list, entry);
     g_hash_table_insert(category_apps, g_strdup(primary_category), category_list);
   }
+  
+  g_print("hyprmenu_app_grid_refresh: Stats:\n");
+  g_print("  Total apps: %d\n", total_apps);
+  g_print("  Desktop apps: %d\n", desktop_app_count);
+  g_print("  Should show apps: %d\n", shown_app_count);
+  g_print("  Valid apps added: %d\n", valid_count);
   
   g_print("hyprmenu_app_grid_refresh: Added %d valid applications total\n", valid_count);
   g_list_free_full(all_apps, g_object_unref);
@@ -263,10 +288,15 @@ hyprmenu_app_grid_refresh (HyprMenuAppGrid *self)
   GList *category_names = g_hash_table_get_keys(category_apps);
   category_names = g_list_sort(category_names, (GCompareFunc)g_ascii_strcasecmp);
   
+  g_print("hyprmenu_app_grid_refresh: Found %d categories\n", g_list_length(category_names));
+  
   // Add categories in sorted order
   for (GList *l = category_names; l != NULL; l = l->next) {
     const char *category_name = l->data;
     GSList *apps = g_hash_table_lookup(category_apps, category_name);
+    int app_count = g_slist_length(apps);
+    
+    g_print("  Category '%s' has %d apps\n", category_name, app_count);
     
     // Sort apps within the category alphabetically
     apps = g_slist_sort(apps, (GCompareFunc)hyprmenu_app_entry_compare_by_name);
@@ -275,6 +305,9 @@ hyprmenu_app_grid_refresh (HyprMenuAppGrid *self)
     for (GSList *app_item = apps; app_item != NULL; app_item = app_item->next) {
       HyprMenuAppEntry *entry = HYPRMENU_APP_ENTRY(app_item->data);
       if (entry) {
+        const char *app_name = hyprmenu_app_entry_get_app_name(entry);
+        g_print("    Adding app '%s' to category UI\n", app_name);
+        
         hyprmenu_category_list_add_category(HYPRMENU_CATEGORY_LIST(self->category_list),
                                           category_name,
                                           GTK_WIDGET(entry));
@@ -420,6 +453,22 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
   // Always use 4 columns for grid view, regardless of config
   if (config->use_grid_view) {
     config->grid_columns = 4;
+    
+    // Find and resize the window
+    GtkRoot *root = gtk_widget_get_root(GTK_WIDGET(self));
+    if (GTK_IS_WINDOW(root)) {
+      gtk_window_set_resizable(GTK_WINDOW(root), FALSE);
+      // Keep the 800x600 size
+      gtk_window_set_default_size(GTK_WINDOW(root), 800, 600);
+    }
+  } else {
+    // Reset window size for list view
+    GtkRoot *root = gtk_widget_get_root(GTK_WIDGET(self));
+    if (GTK_IS_WINDOW(root)) {
+      gtk_window_set_resizable(GTK_WINDOW(root), TRUE);
+      // Keep the 800x600 size
+      gtk_window_set_default_size(GTK_WINDOW(root), 800, 600);
+    }
   }
   
   // Update the category list view mode
@@ -428,33 +477,6 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
   
   // Clear existing view and refresh
   hyprmenu_category_list_clear(HYPRMENU_CATEGORY_LIST(self->category_list));
-  
-  // Apply width for grid if needed
-  if (config->use_grid_view) {
-    GtkWidget *viewport = gtk_widget_get_parent(self->category_list);
-    if (GTK_IS_VIEWPORT(viewport)) {
-      // Calculate exactly the required width for 4 tiles with spacing
-      int tile_size = 100;
-      int spacing = 8;
-      int margin = 12;
-      
-      // Calculate exact width needed: 4 tiles + 3 spacings + 2 margins
-      int total_width = (4 * tile_size) + (3 * spacing) + (2 * margin);
-      gtk_widget_set_size_request(viewport, total_width, -1);
-      
-      // Also set parent window width to avoid extra space
-      GtkRoot *root = gtk_widget_get_root(GTK_WIDGET(self));
-      if (GTK_IS_WINDOW(root)) {
-        gtk_window_set_default_size(GTK_WINDOW(root), total_width + 2, -1);
-      }
-    }
-  } else {
-    // Reset any size constraints
-    GtkWidget *viewport = gtk_widget_get_parent(self->category_list);
-    if (GTK_IS_VIEWPORT(viewport)) {
-      gtk_widget_set_size_request(viewport, -1, -1);
-    }
-  }
   
   // Refresh the grid with new layout
   hyprmenu_app_grid_refresh(self);
