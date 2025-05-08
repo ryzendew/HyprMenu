@@ -444,23 +444,21 @@ hyprmenu_config_apply_css()
     ".hyprmenu-category {\n"
     "  background-color: %s;\n"
     "  border-radius: %dpx;\n"
-    "  margin: 4px 0px;\n"
-    "  padding: %dpx;\n"
+    "  margin: 8px 0px;\n"
+    "  padding: 0px 4px;\n"
     "  border: 1px solid rgba(255, 255, 255, 0.05);\n",
     config->category_background_color,
-    config->category_corner_radius,
-    config->category_padding);
+    config->category_corner_radius);
   
   g_string_append_printf(css,
     "}\n"
     ".hyprmenu-category-title {\n"
     "  color: %s;\n"
-    "  font-size: %dpx;\n"
+    "  font-size: 14px;\n"
     "  font-weight: bold;\n"
-    "  padding: 6px 8px;\n"
+    "  padding: 0px 4px;\n"
     "  margin-bottom: 4px;\n",
-    config->category_text_color,
-    config->category_font_size);
+    config->category_text_color);
   
   // Add separator if configured
   if (config->category_show_separators) {
@@ -496,10 +494,11 @@ hyprmenu_config_apply_css()
     ".hyprmenu-list-row {\n"
     "  background-color: rgba(60, 60, 70, 0.6);\n"
     "  border-radius: 6px;\n"
-    "  padding: 6px 8px;\n"
+    "  padding: 8px 12px;\n"
     "  margin: 2px 0px;\n"
     "  transition: all 150ms ease;\n"
     "  border: 1px solid rgba(255, 255, 255, 0.05);\n"
+    "  min-height: 42px;\n"
     "}\n"
     ".hyprmenu-list-row:hover {\n"
     "  background-color: rgba(80, 80, 90, 0.7);\n"

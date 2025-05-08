@@ -12,7 +12,6 @@ struct _HyprMenuAppGrid
   GtkWidget *category_list;    // Grid view
   GtkWidget *list_view;        // List view
   GtkWidget *scrolled_window;
-  GtkWidget *header_box;       // Header box for toggle button
   GtkWidget *toggle_button;    // Toggle button for grid/list view
   GtkWidget *current_view;     // Points to either category_list or list_view
   
@@ -118,12 +117,6 @@ hyprmenu_app_grid_init (HyprMenuAppGrid *self)
   /* Create UI */
   gtk_orientable_set_orientation (GTK_ORIENTABLE (self), GTK_ORIENTATION_VERTICAL);
   
-  /* Create header box for toggle button */
-  self->header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-  gtk_widget_set_halign(self->header_box, GTK_ALIGN_END);
-  gtk_widget_set_margin_end(self->header_box, 8);
-  gtk_widget_set_margin_top(self->header_box, 4);
-  
   /* Create toggle button */
   self->toggle_button = gtk_button_new_from_icon_name(
     config->use_grid_view ? "view-list-symbolic" : "view-grid-symbolic");
@@ -131,9 +124,6 @@ hyprmenu_app_grid_init (HyprMenuAppGrid *self)
   gtk_widget_set_tooltip_text(self->toggle_button, 
     config->use_grid_view ? "Switch to List View" : "Switch to Grid View");
   g_signal_connect(self->toggle_button, "clicked", G_CALLBACK(on_toggle_view_clicked), self);
-  
-  gtk_box_append(GTK_BOX(self->header_box), self->toggle_button);
-  gtk_box_append(GTK_BOX(self), self->header_box);
   
   /* Create scrolled window */
   self->scrolled_window = gtk_scrolled_window_new ();
@@ -331,4 +321,8 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
   
   /* Save config changes */
   hyprmenu_config_save();
+}
+
+GtkWidget* hyprmenu_app_grid_get_toggle_button(HyprMenuAppGrid *self) {
+  return self->toggle_button;
 } 

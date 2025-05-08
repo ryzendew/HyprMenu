@@ -386,14 +386,14 @@ hyprmenu_window_init (HyprMenuWindow *self)
   GtkWidget *content_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
   gtk_widget_set_hexpand(content_box, TRUE);
   gtk_widget_set_vexpand(content_box, TRUE);
-  gtk_widget_set_halign(content_box, GTK_ALIGN_CENTER);
+  gtk_widget_set_halign(content_box, GTK_ALIGN_FILL);
   gtk_box_append(GTK_BOX(v_box), content_box);
   
   /* Create main box */
   self->main_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   gtk_widget_add_css_class (self->main_box, "hyprmenu-main-box");
   gtk_widget_set_hexpand (self->main_box, TRUE);
-  gtk_widget_set_halign(self->main_box, GTK_ALIGN_CENTER);
+  gtk_widget_set_halign(self->main_box, GTK_ALIGN_FILL);
   gtk_box_append(GTK_BOX(content_box), self->main_box);
   
   /* Create search entry */
@@ -412,7 +412,7 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_widget_add_css_class (self->app_grid, "hyprmenu-app-grid");
   gtk_widget_set_hexpand (self->app_grid, TRUE);
   gtk_widget_set_vexpand (self->app_grid, TRUE);
-  gtk_widget_set_halign(self->app_grid, GTK_ALIGN_CENTER);
+  gtk_widget_set_halign(self->app_grid, GTK_ALIGN_FILL);
   gtk_box_append (GTK_BOX (self->main_box), self->app_grid);
   
   /* Create system buttons box at the bottom */
@@ -429,6 +429,8 @@ hyprmenu_window_init (HyprMenuWindow *self)
   GtkWidget *hibernate_button = create_system_button("system-suspend-hibernate-symbolic", "Hibernate", G_CALLBACK(on_hibernate_clicked), self);
   GtkWidget *sleep_button = create_system_button("system-suspend-symbolic", "Sleep", G_CALLBACK(on_sleep_clicked), self);
   GtkWidget *lock_button = create_system_button("system-lock-screen-symbolic", "Lock", G_CALLBACK(on_lock_clicked), self);
+  // Get the grid/list toggle button from the app grid
+  GtkWidget *toggle_button = hyprmenu_app_grid_get_toggle_button((HyprMenuAppGrid*)self->app_grid);
   
   gtk_box_append(GTK_BOX(self->system_buttons_box), logout_button);
   gtk_box_append(GTK_BOX(self->system_buttons_box), shutdown_button);
@@ -436,6 +438,8 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_box_append(GTK_BOX(self->system_buttons_box), hibernate_button);
   gtk_box_append(GTK_BOX(self->system_buttons_box), sleep_button);
   gtk_box_append(GTK_BOX(self->system_buttons_box), lock_button);
+  // Add a separator or spacing if desired, then the toggle button
+  gtk_box_append(GTK_BOX(self->system_buttons_box), toggle_button);
   
   /* Add system buttons to bottom of main container */
   gtk_box_append(GTK_BOX(v_box), self->system_buttons_box);

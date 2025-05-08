@@ -12,5 +12,6 @@ HyprMenuAppGrid* hyprmenu_app_grid_new (void);
 void hyprmenu_app_grid_refresh (HyprMenuAppGrid *self);
 void hyprmenu_app_grid_filter (HyprMenuAppGrid *self, const char *search_text);
 void hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self);
+GtkWidget* hyprmenu_app_grid_get_toggle_button(HyprMenuAppGrid *self);
 
 G_END_DECLS 

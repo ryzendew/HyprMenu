@@ -3,6 +3,9 @@
 #include "app_entry.h"
 #include <string.h>
 
+// Forward declaration of the comparison function
+static gint compare_rows_by_app_name(gconstpointer a, gconstpointer b);
+
 static void
 on_list_row_clicked(GtkGestureClick *gesture,
                     gint n_press,
@@ -72,7 +75,9 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   gtk_widget_add_css_class (self->main_box, "hyprmenu-category-list");
   gtk_widget_set_hexpand (self->main_box, TRUE);
   gtk_widget_set_vexpand (self->main_box, TRUE);
-  gtk_widget_set_halign (self->main_box, GTK_ALIGN_CENTER);
+  gtk_widget_set_halign (self->main_box, GTK_ALIGN_FILL);
+  gtk_widget_set_margin_start(self->main_box, 12);
+  gtk_widget_set_margin_end(self->main_box, 12);
   
   /* Add main box to self */
   gtk_widget_set_parent (self->main_box, GTK_WIDGET (self));
@@ -226,44 +231,63 @@ hyprmenu_category_list_add_category (HyprMenuCategoryList *self,
   
   /* Get app info directly */
   const char *app_name = hyprmenu_app_entry_get_app_name(entry);
-  GDesktopAppInfo *app_info = hyprmenu_app_entry_get_app_info(entry);
   
-  /* Create and add icon */
-  GtkWidget *icon = gtk_image_new();
-  GIcon *gicon = NULL;
+  /* Store the app widget reference in the row */
+  g_object_set_data_full(G_OBJECT(row), "app-widget", g_object_ref(app_widget), g_object_unref);
   
-  if (app_info) {
-    gicon = g_app_info_get_icon(G_APP_INFO(app_info));
-  }
+  /* Add click handler */
+  GtkGesture *click_gesture = gtk_gesture_click_new();
+  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click_gesture), GDK_BUTTON_PRIMARY);
+  g_signal_connect(click_gesture, "pressed", G_CALLBACK(on_list_row_clicked), app_widget);
+  gtk_widget_add_controller(row, GTK_EVENT_CONTROLLER(click_gesture));
   
-  if (gicon) {
-    gtk_image_set_from_gicon(GTK_IMAGE(icon), gicon);
-  } else {
-    gtk_image_set_from_icon_name(GTK_IMAGE(icon), "application-x-executable");
-  }
-  
-  gtk_image_set_pixel_size(GTK_IMAGE(icon), 24);
-  gtk_widget_set_margin_start(icon, 4);
-  gtk_widget_add_css_class(icon, "hyprmenu-app-icon");
-  
-  /* Create label with app name */
-  GtkWidget *label = gtk_label_new(app_name);
-  gtk_widget_set_hexpand(label, TRUE);
-  gtk_label_set_xalign(GTK_LABEL(label), 0);
-  gtk_widget_set_margin_start(label, 8);
-  gtk_widget_add_css_class(label, "hyprmenu-app-name");
-  
-  /* Add icon and label to row */
-  gtk_box_append(GTK_BOX(row), icon);
-  gtk_box_append(GTK_BOX(row), label);
-  
-  /* Connect click handler */
-  GtkGesture *gesture = gtk_gesture_click_new();
-  g_signal_connect(gesture, "pressed", G_CALLBACK(on_list_row_clicked), entry);
-  gtk_widget_add_controller(row, GTK_EVENT_CONTROLLER(gesture));
-  
-  /* Add row to category box */
+  /* Add the row to the category box */
   gtk_box_append(GTK_BOX(category_box), row);
+  
+  /* Sort the category box contents alphabetically */
+  GList *children = NULL;
+  GtkWidget *child = gtk_widget_get_first_child(category_box);
+  while (child) {
+    GtkWidget *next = gtk_widget_get_next_sibling(child);
+    if (GTK_IS_LABEL(child)) {
+      // Keep the title at the top
+      gtk_box_reorder_child_after(GTK_BOX(category_box), child, NULL);
+    } else {
+      children = g_list_append(children, child);
+    }
+    child = next;
+  }
+  
+  // Sort the list of rows by app name
+  children = g_list_sort(children, (GCompareFunc)compare_rows_by_app_name);
+  
+  // Reorder the rows
+  for (GList *l = children; l != NULL; l = l->next) {
+    GtkWidget *row = l->data;
+    gtk_box_reorder_child_after(GTK_BOX(category_box), row, NULL);
+  }
+  
+  g_list_free(children);
+}
+
+// Add this helper function for sorting
+static gint
+compare_rows_by_app_name(gconstpointer a, gconstpointer b)
+{
+  GtkWidget *row_a = GTK_WIDGET(a);
+  GtkWidget *row_b = GTK_WIDGET(b);
+  
+  HyprMenuAppEntry *entry_a = g_object_get_data(G_OBJECT(row_a), "app-widget");
+  HyprMenuAppEntry *entry_b = g_object_get_data(G_OBJECT(row_b), "app-widget");
+  
+  if (!entry_a || !entry_b) return 0;
+  
+  const char *name_a = hyprmenu_app_entry_get_app_name(entry_a);
+  const char *name_b = hyprmenu_app_entry_get_app_name(entry_b);
+  
+  if (!name_a || !name_b) return 0;
+  
+  return g_ascii_strcasecmp(name_a, name_b);
 }
 
 GtkWidget *
