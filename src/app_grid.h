@@ -10,5 +10,6 @@ G_DECLARE_FINAL_TYPE (HyprMenuAppGrid, hyprmenu_app_grid, HYPRMENU, APP_GRID, Gt
 HyprMenuAppGrid* hyprmenu_app_grid_new (void);
 void hyprmenu_app_grid_refresh (HyprMenuAppGrid *self);
 void hyprmenu_app_grid_filter (HyprMenuAppGrid *self, const char *search_text);
+void hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self);
 
 G_END_DECLS 

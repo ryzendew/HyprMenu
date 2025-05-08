@@ -14,6 +14,8 @@ struct _HyprMenuAppEntry
   GtkWidget *main_box;
   GtkWidget *icon;
   GtkWidget *name_label;
+  
+  gboolean is_grid_layout;  // Whether we're using grid layout (vertical)
 };
 
 G_DEFINE_TYPE (HyprMenuAppEntry, hyprmenu_app_entry, GTK_TYPE_BUTTON)
@@ -67,7 +69,10 @@ hyprmenu_app_entry_finalize (GObject *object)
 static void
 hyprmenu_app_entry_init (HyprMenuAppEntry *self)
 {
-  /* Create main box */
+  /* Initialize layout mode - default to horizontal */
+  self->is_grid_layout = FALSE;
+  
+  /* Create main box - horizontal for list view by default */
   self->main_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
   gtk_widget_add_css_class (self->main_box, "hyprmenu-app-entry");
   gtk_widget_set_hexpand (self->main_box, TRUE);
@@ -221,4 +226,91 @@ hyprmenu_app_entry_get_categories (HyprMenuAppEntry *self)
   }
   
   return (const char **) self->categories;
+}
+
+/**
+ * hyprmenu_app_entry_set_grid_layout:
+ * @self: A #HyprMenuAppEntry
+ * @is_grid: TRUE for grid/vertical layout, FALSE for list/horizontal layout
+ *
+ * Sets the layout of the app entry to be either vertical (for grid view) or
+ * horizontal (for list view).
+ */
+void
+hyprmenu_app_entry_set_grid_layout (HyprMenuAppEntry *self, gboolean is_grid)
+{
+  if (!self) return;
+  
+  /* Skip if already in the right layout */
+  if (self->is_grid_layout == is_grid) {
+    return;
+  }
+  
+  /* Update flag */
+  self->is_grid_layout = is_grid;
+  
+  /* Remove existing children */
+  GtkWidget *old_box = self->main_box;
+  GtkOrientation orientation = is_grid ? GTK_ORIENTATION_VERTICAL : GTK_ORIENTATION_HORIZONTAL;
+  
+  /* Create new box with the correct orientation */
+  self->main_box = gtk_box_new(orientation, 8);
+  gtk_widget_add_css_class(self->main_box, "hyprmenu-app-entry");
+  
+  if (is_grid) {
+    /* Grid layout - add CSS class */
+    gtk_widget_add_css_class(self->main_box, "grid-item");
+    
+    /* Set size request for square shape */
+    gtk_widget_set_size_request(GTK_WIDGET(self), config->grid_item_size, config->grid_item_size);
+    gtk_widget_set_hexpand(GTK_WIDGET(self), FALSE);
+    gtk_widget_set_vexpand(GTK_WIDGET(self), FALSE);
+    
+    /* Center-align the items */
+    gtk_widget_set_halign(self->main_box, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(self->main_box, GTK_ALIGN_CENTER);
+    
+    /* Make icon larger for grid view */
+    gtk_image_set_pixel_size(GTK_IMAGE(self->icon), 48);
+    
+    /* Update label properties for grid view */
+    gtk_label_set_justify(GTK_LABEL(self->name_label), GTK_JUSTIFY_CENTER);
+    gtk_label_set_lines(GTK_LABEL(self->name_label), 2);
+    gtk_label_set_ellipsize(GTK_LABEL(self->name_label), PANGO_ELLIPSIZE_END);
+    gtk_label_set_max_width_chars(GTK_LABEL(self->name_label), 12);
+    gtk_widget_set_halign(self->name_label, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top(self->name_label, 8);
+  } else {
+    /* List layout */
+    gtk_widget_remove_css_class(self->main_box, "grid-item");
+    
+    /* Reset size request */
+    gtk_widget_set_size_request(GTK_WIDGET(self), -1, -1);
+    
+    /* Reset icon size */
+    gtk_image_set_pixel_size(GTK_IMAGE(self->icon), 32);
+    
+    /* Reset label properties */
+    gtk_label_set_justify(GTK_LABEL(self->name_label), GTK_JUSTIFY_LEFT);
+    gtk_label_set_lines(GTK_LABEL(self->name_label), 1);
+    gtk_label_set_max_width_chars(GTK_LABEL(self->name_label), -1);
+    gtk_widget_set_halign(self->name_label, GTK_ALIGN_START);
+  }
+  
+  /* Reparent icon and label to new box */
+  g_object_ref(self->icon);
+  g_object_ref(self->name_label);
+  
+  gtk_box_remove(GTK_BOX(old_box), self->icon);
+  gtk_box_remove(GTK_BOX(old_box), self->name_label);
+  
+  gtk_box_append(GTK_BOX(self->main_box), self->icon);
+  gtk_box_append(GTK_BOX(self->main_box), self->name_label);
+  
+  g_object_unref(self->icon);
+  g_object_unref(self->name_label);
+  
+  /* Replace the old box with the new one */
+  gtk_widget_unparent(old_box);
+  gtk_widget_set_parent(self->main_box, GTK_WIDGET(self));
 } 

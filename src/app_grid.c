@@ -11,6 +11,8 @@ struct _HyprMenuAppGrid
   
   GtkWidget *category_list;
   GtkWidget *scrolled_window;
+  GtkWidget *header_box;      // Header box for toggle button
+  GtkWidget *toggle_button;   // Toggle button for grid/list view
   
   GArray *app_entries;
   
@@ -76,6 +78,13 @@ on_click_outside(GtkGestureClick *gesture,
 }
 
 static void
+on_toggle_view_clicked(GtkButton *button, gpointer user_data)
+{
+  HyprMenuAppGrid *self = HYPRMENU_APP_GRID(user_data);
+  hyprmenu_app_grid_toggle_view(self);
+}
+
+static void
 hyprmenu_app_grid_finalize (GObject *object)
 {
   HyprMenuAppGrid *self = HYPRMENU_APP_GRID (object);
@@ -100,6 +109,23 @@ hyprmenu_app_grid_init (HyprMenuAppGrid *self)
   /* Create UI */
   gtk_orientable_set_orientation (GTK_ORIENTABLE (self), GTK_ORIENTATION_VERTICAL);
   
+  /* Create header box for toggle button */
+  self->header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_widget_set_halign(self->header_box, GTK_ALIGN_END);
+  gtk_widget_set_margin_end(self->header_box, 8);
+  gtk_widget_set_margin_top(self->header_box, 4);
+  
+  /* Create toggle button */
+  self->toggle_button = gtk_button_new_from_icon_name(
+    config->use_grid_view ? "view-list-symbolic" : "view-grid-symbolic");
+  gtk_widget_add_css_class(self->toggle_button, "flat");
+  gtk_widget_set_tooltip_text(self->toggle_button, 
+    config->use_grid_view ? "Switch to List View" : "Switch to Grid View");
+  g_signal_connect(self->toggle_button, "clicked", G_CALLBACK(on_toggle_view_clicked), self);
+  
+  gtk_box_append(GTK_BOX(self->header_box), self->toggle_button);
+  gtk_box_append(GTK_BOX(self), self->header_box);
+  
   /* Create scrolled window */
   self->scrolled_window = gtk_scrolled_window_new ();
   gtk_widget_set_vexpand (self->scrolled_window, TRUE);
@@ -110,6 +136,10 @@ hyprmenu_app_grid_init (HyprMenuAppGrid *self)
   self->category_list = GTK_WIDGET (hyprmenu_category_list_new ());
   gtk_scrolled_window_set_child (GTK_SCROLLED_WINDOW (self->scrolled_window), 
                                 self->category_list);
+  
+  /* Set initial view mode */
+  hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), 
+                                      config->use_grid_view);
   
   /* Add scrolled window to self */
   gtk_box_append (GTK_BOX (self), self->scrolled_window);
@@ -371,4 +401,48 @@ hyprmenu_app_grid_filter (HyprMenuAppGrid *self, const char *search_text)
   }
   
   g_hash_table_destroy(category_entries);
+}
+
+void
+hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
+{
+  if (!self) return;
+  
+  // Toggle the config setting
+  config->use_grid_view = !config->use_grid_view;
+  
+  // Update button icon and tooltip
+  gtk_button_set_icon_name(GTK_BUTTON(self->toggle_button),
+    config->use_grid_view ? "view-list-symbolic" : "view-grid-symbolic");
+  gtk_widget_set_tooltip_text(self->toggle_button,
+    config->use_grid_view ? "Switch to List View" : "Switch to Grid View");
+  
+  // Update the category list view mode
+  hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), 
+                                      config->use_grid_view);
+  
+  // Clear existing view and refresh
+  hyprmenu_category_list_clear(HYPRMENU_CATEGORY_LIST(self->category_list));
+  
+  // Apply width for grid if needed
+  if (config->use_grid_view) {
+    GtkWidget *viewport = gtk_widget_get_parent(self->category_list);
+    if (GTK_IS_VIEWPORT(viewport)) {
+      // Calculate viewport width based on grid items
+      int total_width = (config->grid_item_size + 8) * config->grid_columns + 16;
+      gtk_widget_set_size_request(viewport, total_width, -1);
+    }
+  } else {
+    // Reset any size constraints
+    GtkWidget *viewport = gtk_widget_get_parent(self->category_list);
+    if (GTK_IS_VIEWPORT(viewport)) {
+      gtk_widget_set_size_request(viewport, -1, -1);
+    }
+  }
+  
+  // Refresh the grid with new layout
+  hyprmenu_app_grid_refresh(self);
+  
+  // Save config
+  hyprmenu_config_save();
 } 

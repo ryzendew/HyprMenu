@@ -96,6 +96,11 @@ typedef struct _HyprMenuConfig {
   gboolean blur_background;
   gint blur_strength;
   gdouble opacity;
+  
+  // View settings
+  gboolean use_grid_view;     // Use grid view instead of list view
+  gint grid_columns;          // Number of columns in grid view
+  gint grid_item_size;        // Size of grid items (square size in pixels)
 } HyprMenuConfig;
 
 // Global config instance

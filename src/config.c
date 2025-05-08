@@ -77,6 +77,11 @@ set_defaults(HyprMenuConfig *config)
   config->focus_search_on_open = TRUE;
   config->max_recent_apps = 5;
   
+  // View settings
+  config->use_grid_view = FALSE;  // Default to list view
+  config->grid_columns = 5;       // Default to 5 columns in grid view
+  config->grid_item_size = 120;    // Default square size of 120px
+  
   // File paths
   config->config_dir = g_build_filename(g_get_home_dir(), ".config", "hyprmenu", NULL);
   config->config_file = g_build_filename(config->config_dir, "hyprmenu.conf", NULL);
@@ -196,6 +201,13 @@ hyprmenu_config_load()
     config->max_recent_apps = g_key_file_get_integer(keyfile, "Behavior", "max_recent_apps", NULL);
   }
   
+  // View section
+  if (g_key_file_has_group(keyfile, "View")) {
+    config->use_grid_view = g_key_file_get_boolean(keyfile, "View", "use_grid_view", NULL);
+    config->grid_columns = g_key_file_get_integer(keyfile, "View", "grid_columns", NULL);
+    config->grid_item_size = g_key_file_get_integer(keyfile, "View", "grid_item_size", NULL);
+  }
+  
   return TRUE;
 }
 
@@ -242,6 +254,11 @@ hyprmenu_config_save()
   g_key_file_set_boolean(keyfile, "Behavior", "close_on_app_launch", config->close_on_app_launch);
   g_key_file_set_boolean(keyfile, "Behavior", "focus_search_on_open", config->focus_search_on_open);
   g_key_file_set_integer(keyfile, "Behavior", "max_recent_apps", config->max_recent_apps);
+  
+  // View settings
+  g_key_file_set_boolean(keyfile, "View", "use_grid_view", config->use_grid_view);
+  g_key_file_set_integer(keyfile, "View", "grid_columns", config->grid_columns);
+  g_key_file_set_integer(keyfile, "View", "grid_item_size", config->grid_item_size);
   
   // Save to file
   g_autoptr(GError) error = NULL;
@@ -420,6 +437,36 @@ hyprmenu_config_apply_css()
     ".hyprmenu-app-entry:active {\n"
     "  background-color: rgba(85, 85, 85, 0.9);\n"
     "}\n"
+    ".hyprmenu-app-grid flowboxchild {\n"
+    "  min-width: %dpx;\n"
+    "  min-height: %dpx;\n"
+    "  padding: 0;\n"
+    "}\n"
+    ".hyprmenu-app-entry.grid-item {\n"
+    "  padding: 8px;\n"
+    "  margin: 4px;\n"
+    "  text-align: center;\n"
+    "  width: %dpx;\n"
+    "  height: %dpx;\n"
+    "  min-width: %dpx;\n"
+    "  min-height: %dpx;\n"
+    "  max-width: %dpx;\n"
+    "  max-height: %dpx;\n"
+    "  aspect-ratio: 1/1;\n"
+    "  box-sizing: border-box;\n"
+    "  display: flex;\n"
+    "  flex-direction: column;\n"
+    "  justify-content: center;\n"
+    "  align-items: center;\n"
+    "}\n"
+    ".hyprmenu-app-entry.grid-item .hyprmenu-app-icon {\n"
+    "  margin-right: 0;\n"
+    "  margin-bottom: 6px;\n"
+    "}\n"
+    ".hyprmenu-app-entry.grid-item .hyprmenu-app-name {\n"
+    "  text-align: center;\n"
+    "  font-size: %dpx;\n"
+    "}\n"
     ".hyprmenu-app-icon {\n"
     "  margin-right: 8px;\n"
     "}\n"
@@ -427,6 +474,11 @@ hyprmenu_config_apply_css()
     "  color: %s;\n"
     "  font-size: %dpx;\n"
     "}\n",
+    config->grid_item_size, config->grid_item_size,
+    config->grid_item_size, config->grid_item_size,
+    config->grid_item_size, config->grid_item_size,
+    config->grid_item_size, config->grid_item_size,
+    config->app_entry_font_size - 1,  // Slightly smaller font for grid view
     config->app_entry_text_color, config->app_entry_font_size);
   
   // Scrollbar styles

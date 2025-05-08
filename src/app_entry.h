@@ -12,6 +12,7 @@ HyprMenuAppEntry* hyprmenu_app_entry_new (GDesktopAppInfo *app_info);
 const char* hyprmenu_app_entry_get_app_name (HyprMenuAppEntry *self);
 const char* hyprmenu_app_entry_get_app_id (HyprMenuAppEntry *self);
 const char** hyprmenu_app_entry_get_categories (HyprMenuAppEntry *self);
+void hyprmenu_app_entry_set_grid_layout (HyprMenuAppEntry *self, gboolean is_grid);
 
 int hyprmenu_app_entry_compare_by_name(HyprMenuAppEntry *a, HyprMenuAppEntry *b);
 
