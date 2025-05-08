@@ -1,0 +1,14 @@
+#pragma once
+
+#include <gtk/gtk.h>
+
+G_BEGIN_DECLS
+
+#define HYPRMENU_TYPE_APP_GRID (hyprmenu_app_grid_get_type())
+G_DECLARE_FINAL_TYPE (HyprMenuAppGrid, hyprmenu_app_grid, HYPRMENU, APP_GRID, GtkBox)
+
+HyprMenuAppGrid* hyprmenu_app_grid_new (void);
+void hyprmenu_app_grid_refresh (HyprMenuAppGrid *self);
+void hyprmenu_app_grid_filter (HyprMenuAppGrid *self, const char *search_text);
+
+G_END_DECLS 

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=HyprMenu
+GenericName=Application Launcher
+Comment=A modern application launcher for Hyprland
+Exec=hyprmenu
+Icon=hyprmenu
+Terminal=false
+Categories=Utility;
+Keywords=launcher;menu;application;program;
+StartupNotify=false 
