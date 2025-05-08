@@ -704,7 +704,67 @@ hyprmenu_config_apply_css()
     "  transform: translateY(1px);\n"
     "  box-shadow: none;\n"
     "  color: rgba(255, 255, 255, 1.0);\n"
-    "}\n");
+    "}\n"
+    
+    // Add dialog styling
+    ".session-bg {\n"
+    "  background-color: rgba(40, 42, 54, 0.6);\n"
+    "}\n"
+    
+    ".session-button {\n"
+    "  min-width: 8.182rem;\n"
+    "  min-height: 8.182rem;\n"
+    "  background-color: rgba(56, 58, 66, 0.95);\n"
+    "  color: #f8f8f2;\n"
+    "  font-size: 3rem;\n"
+    "  border-radius: 1rem;\n"
+    "  border: none;\n"
+    "  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);\n"
+    "}\n"
+    
+    ".session-button:hover {\n"
+    "  background-color: rgba(68, 71, 81, 0.95);\n"
+    "}\n"
+    
+    ".session-button:focus {\n"
+    "  background-color: rgba(68, 71, 81, 0.95);\n"
+    "  outline: 2px solid rgba(255, 255, 255, 0.1);\n"
+    "}\n"
+    
+    ".session-button-desc {\n"
+    "  background-color: rgba(68, 71, 81, 0.95);\n"
+    "  color: #f8f8f2;\n"
+    "  border-radius: 0.5rem;\n"
+    "  padding: 0.205rem 0.341rem;\n"
+    "  font-weight: 700;\n"
+    "  font-size: 0.9rem;\n"
+    "}\n"
+    
+    ".txt-title {\n"
+    "  font-size: 1.5rem;\n"
+    "  font-weight: bold;\n"
+    "  color: #f8f8f2;\n"
+    "  margin-bottom: 0.5rem;\n"
+    "}\n"
+    
+    ".txt-small {\n"
+    "  font-size: 0.9rem;\n"
+    "  color: rgba(248, 248, 242, 0.7);\n"
+    "}\n"
+    
+    ".spacing-v-15 {\n"
+    "  margin: 15px 0;\n"
+    "}\n"
+    
+    // Session button colors
+    ".session-color-1 { color: #8be9fd; }\n"  // Lock
+    ".session-color-2 { color: #50fa7b; }\n"  // Logout
+    ".session-color-3 { color: #f1fa8c; }\n"  // Sleep
+    ".session-color-4 { color: #bd93f9; }\n"  // Hibernate
+    ".session-color-5 { color: #ff5555; }\n"  // Shutdown/Yes
+    ".session-color-6 { color: #ff79c6; }\n"  // Reboot
+    ".session-color-7 { color: #bfbfbf; }\n"  // Cancel/No
+  );
   
   // Apply CSS to application
   GtkCssProvider *provider = gtk_css_provider_new();

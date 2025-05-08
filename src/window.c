@@ -7,6 +7,31 @@
 #include "app_grid.h"
 #include "recent_apps.h"
 
+// Add this struct definition at the top of the file, after the includes
+typedef struct {
+  HyprMenuWindow *window;
+  char *command;
+  char *error_message;
+} DialogData;
+
+// Function declarations
+static void on_dialog_yes_clicked(GtkButton *button, gpointer user_data);
+static void on_dialog_cancel_clicked(GtkButton *button, gpointer user_data);
+static void show_confirmation_dialog(HyprMenuWindow *self,
+                                   const char *title,
+                                   const char *message,
+                                   const char *command,
+                                   const char *error_message);
+static void execute_system_action(HyprMenuWindow *self, 
+                                const char *command,
+                                const char *error_message);
+static void on_logout_clicked(GtkButton *button, gpointer user_data);
+static void on_shutdown_clicked(GtkButton *button, gpointer user_data);
+static void on_reboot_clicked(GtkButton *button, gpointer user_data);
+static void on_hibernate_clicked(GtkButton *button, gpointer user_data);
+static void on_sleep_clicked(GtkButton *button, gpointer user_data);
+static void on_lock_clicked(GtkButton *button, gpointer user_data);
+
 G_DEFINE_TYPE (HyprMenuWindow, hyprmenu_window, GTK_TYPE_APPLICATION_WINDOW)
 
 static void
@@ -136,9 +161,6 @@ on_click_outside(GtkGestureClick *gesture,
                  double y,
                  gpointer user_data)
 {
-  (void)gesture;  // Silence unused parameter warning
-  (void)n_press;  // Silence unused parameter warning
-  
   // Only proceed if configured to close on click outside
   if (!config->close_on_click_outside) {
     return;
@@ -146,18 +168,33 @@ on_click_outside(GtkGestureClick *gesture,
   
   HyprMenuWindow *self = HYPRMENU_WINDOW(user_data);
   GtkWidget *widget = GTK_WIDGET(self);
-  GtkWidget *main_box = self->main_box;
+  GtkWidget *clicked_widget = gtk_event_controller_get_widget(GTK_EVENT_CONTROLLER(gesture));
   
-  // Get the widget's bounds using the new API
+  // Get the widget under the pointer
+  GtkWidget *target = gtk_widget_pick(widget, x, y, GTK_PICK_DEFAULT);
+  g_print("Click outside - target widget: %s\n", target ? gtk_widget_get_name(target) : "NULL");
+  
+  // If the click is on a system button or its child (icon), don't close
+  GtkWidget *ancestor = target;
+  while (ancestor) {
+    if (GTK_IS_BUTTON(ancestor) && 
+        gtk_widget_has_css_class(ancestor, "system-button")) {
+      g_print("Click on system button - not closing\n");
+      return;
+    }
+    ancestor = gtk_widget_get_parent(ancestor);
+  }
+  
+  // Get the main box bounds
   graphene_rect_t bounds;
-  if (!gtk_widget_compute_bounds(main_box, widget, &bounds)) {
+  if (!gtk_widget_compute_bounds(self->main_box, widget, &bounds)) {
     return;  // Failed to compute bounds
   }
   
-  // Convert coordinates to widget space using the new API
+  // Convert coordinates to widget space
   graphene_point_t point = GRAPHENE_POINT_INIT(x, y);
   graphene_point_t transformed;
-  if (!gtk_widget_compute_point(main_box, widget, &point, &transformed)) {
+  if (!gtk_widget_compute_point(clicked_widget, self->main_box, &point, &transformed)) {
     return;  // Failed to compute point
   }
   
@@ -166,7 +203,8 @@ on_click_outside(GtkGestureClick *gesture,
       transformed.y < bounds.origin.y || 
       transformed.x > bounds.origin.x + bounds.size.width || 
       transformed.y > bounds.origin.y + bounds.size.height) {
-    GtkApplication *app = GTK_APPLICATION(gtk_window_get_application(GTK_WINDOW(self)));
+    g_print("Click outside main box - closing window\n");
+    GtkApplication *app = gtk_window_get_application(GTK_WINDOW(self));
     gtk_window_close(GTK_WINDOW(self));
     if (app) {
       g_application_quit(G_APPLICATION(app));
@@ -174,89 +212,255 @@ on_click_outside(GtkGestureClick *gesture,
   }
 }
 
-// System action functions
+static void
+on_dialog_yes_clicked(GtkButton *button, gpointer user_data)
+{
+  DialogData *data = (DialogData *)user_data;
+  g_print("Executing command: %s\n", data->command);
+  
+  // Execute the command
+  execute_system_action(data->window, data->command, data->error_message);
+  
+  // Get dialog window and destroy it
+  GtkWidget *dialog = gtk_widget_get_ancestor(GTK_WIDGET(button), GTK_TYPE_WINDOW);
+  if (dialog) {
+    gtk_window_destroy(GTK_WINDOW(dialog));
+  }
+  
+  // Free data
+  g_free(data->command);
+  g_free(data->error_message);
+  g_free(data);
+}
+
+static void
+on_dialog_cancel_clicked(GtkButton *button, gpointer user_data)
+{
+  DialogData *data = (DialogData *)user_data;
+  
+  // Get dialog window and destroy it
+  GtkWidget *dialog = gtk_widget_get_ancestor(GTK_WIDGET(button), GTK_TYPE_WINDOW);
+  if (dialog) {
+    gtk_window_destroy(GTK_WINDOW(dialog));
+  }
+  
+  // Free data
+  g_free(data->command);
+  g_free(data->error_message);
+  g_free(data);
+}
+
+static void
+show_confirmation_dialog(HyprMenuWindow *self,
+                        const char *title,
+                        const char *message,
+                        const char *command,
+                        const char *error_message)
+{
+  g_print("Showing confirmation dialog: %s\n", title);
+  
+  // Create a new window for the dialog
+  GtkWidget *dialog = gtk_window_new();
+  gtk_window_set_title(GTK_WINDOW(dialog), title);
+  gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
+  gtk_window_set_transient_for(GTK_WINDOW(dialog), GTK_WINDOW(self));
+  gtk_window_set_destroy_with_parent(GTK_WINDOW(dialog), TRUE);
+  
+  // Initialize layer shell for dialog
+  gtk_layer_init_for_window(GTK_WINDOW(dialog));
+  gtk_layer_set_layer(GTK_WINDOW(dialog), GTK_LAYER_SHELL_LAYER_OVERLAY);
+  gtk_layer_set_anchor(GTK_WINDOW(dialog), GTK_LAYER_SHELL_EDGE_TOP, TRUE);
+  gtk_layer_set_anchor(GTK_WINDOW(dialog), GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
+  gtk_layer_set_anchor(GTK_WINDOW(dialog), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
+  gtk_layer_set_anchor(GTK_WINDOW(dialog), GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
+  
+  // Create main container
+  GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_add_css_class(main_box, "session-bg");
+  
+  // Add click-outside handler using a gesture controller
+  GtkWidget *overlay_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  GtkGesture *click = gtk_gesture_click_new();
+  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), GDK_BUTTON_PRIMARY);
+  g_signal_connect(click, "pressed", G_CALLBACK(on_click_outside), dialog);
+  gtk_widget_add_controller(overlay_box, GTK_EVENT_CONTROLLER(click));
+  gtk_box_append(GTK_BOX(main_box), overlay_box);
+  
+  // Create content box
+  GtkWidget *content_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+  gtk_widget_set_vexpand(content_box, TRUE);
+  gtk_widget_set_valign(content_box, GTK_ALIGN_CENTER);
+  gtk_widget_set_halign(content_box, GTK_ALIGN_CENTER);
+  gtk_widget_add_css_class(content_box, "spacing-v-15");
+  
+  // Add title and description
+  GtkWidget *title_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_set_margin_bottom(title_box, 10);
+  
+  GtkWidget *title_label = gtk_label_new(title);
+  gtk_widget_add_css_class(title_label, "txt-title");
+  gtk_box_append(GTK_BOX(title_box), title_label);
+  
+  GtkWidget *desc_label = gtk_label_new(message);
+  gtk_widget_add_css_class(desc_label, "txt-small");
+  gtk_label_set_justify(GTK_LABEL(desc_label), GTK_JUSTIFY_CENTER);
+  gtk_box_append(GTK_BOX(title_box), desc_label);
+  
+  gtk_box_append(GTK_BOX(content_box), title_box);
+  
+  // Create button grid
+  GtkWidget *button_grid = gtk_grid_new();
+  gtk_grid_set_row_spacing(GTK_GRID(button_grid), 15);
+  gtk_grid_set_column_spacing(GTK_GRID(button_grid), 15);
+  gtk_widget_set_halign(button_grid, GTK_ALIGN_CENTER);
+  
+  // Create Yes button
+  GtkWidget *yes_button = gtk_button_new();
+  gtk_widget_add_css_class(yes_button, "session-button");
+  gtk_widget_add_css_class(yes_button, "session-color-5"); // Use red color for power actions
+  
+  GtkWidget *yes_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  GtkWidget *yes_icon = gtk_image_new_from_icon_name("system-shutdown-symbolic");
+  gtk_image_set_pixel_size(GTK_IMAGE(yes_icon), 48);
+  gtk_box_append(GTK_BOX(yes_box), yes_icon);
+  
+  GtkWidget *yes_label = gtk_label_new("Yes");
+  gtk_widget_add_css_class(yes_label, "session-button-desc");
+  gtk_widget_set_margin_top(yes_label, 5);
+  gtk_box_append(GTK_BOX(yes_box), yes_label);
+  
+  gtk_button_set_child(GTK_BUTTON(yes_button), yes_box);
+  
+  // Store command and error message for the callback
+  DialogData *data = g_new(DialogData, 1);
+  data->window = self;
+  data->command = g_strdup(command);
+  data->error_message = g_strdup(error_message);
+  
+  g_signal_connect(yes_button, "clicked", G_CALLBACK(on_dialog_yes_clicked), data);
+  
+  // Create No button
+  GtkWidget *no_button = gtk_button_new();
+  gtk_widget_add_css_class(no_button, "session-button");
+  gtk_widget_add_css_class(no_button, "session-color-7"); // Use neutral color for cancel
+  
+  GtkWidget *no_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  GtkWidget *no_icon = gtk_image_new_from_icon_name("window-close-symbolic");
+  gtk_image_set_pixel_size(GTK_IMAGE(no_icon), 48);
+  gtk_box_append(GTK_BOX(no_box), no_icon);
+  
+  GtkWidget *no_label = gtk_label_new("No");
+  gtk_widget_add_css_class(no_label, "session-button-desc");
+  gtk_widget_set_margin_top(no_label, 5);
+  gtk_box_append(GTK_BOX(no_box), no_label);
+  
+  gtk_button_set_child(GTK_BUTTON(no_button), no_box);
+  g_signal_connect(no_button, "clicked", G_CALLBACK(on_dialog_cancel_clicked), data);
+  
+  // Add buttons to grid
+  gtk_grid_attach(GTK_GRID(button_grid), yes_button, 0, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(button_grid), no_button, 1, 0, 1, 1);
+  
+  gtk_box_append(GTK_BOX(content_box), button_grid);
+  gtk_box_append(GTK_BOX(main_box), content_box);
+  
+  gtk_window_set_child(GTK_WINDOW(dialog), main_box);
+  gtk_window_present(GTK_WINDOW(dialog));
+}
+
 static void
 on_logout_clicked (GtkButton *button, gpointer user_data)
 {
+  g_print("Logout button clicked\n");
   (void)button;
-  (void)user_data;
+  HyprMenuWindow *self = HYPRMENU_WINDOW(user_data);
   
-  g_spawn_command_line_async("hyprctl dispatch exit", NULL);
-  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(user_data));
-  if (app) {
-    g_application_quit(G_APPLICATION(app));
-  }
+  show_confirmation_dialog(self,
+                         "Logout",
+                         "Are you sure you want to logout?",
+                         "bash -c 'pkill Hyprland || pkill sway || pkill niri || loginctl terminate-user $USER'",
+                         "Failed to execute logout command");
 }
 
 static void
 on_shutdown_clicked (GtkButton *button, gpointer user_data)
 {
+  g_print("Shutdown button clicked\n");
   (void)button;
-  (void)user_data;
+  HyprMenuWindow *self = HYPRMENU_WINDOW(user_data);
   
-  g_spawn_command_line_async("systemctl poweroff", NULL);
-  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(user_data));
-  if (app) {
-    g_application_quit(G_APPLICATION(app));
-  }
+  show_confirmation_dialog(self,
+                         "Shutdown",
+                         "Are you sure you want to shutdown the system?",
+                         "bash -c 'systemctl poweroff || loginctl poweroff'",
+                         "Failed to execute shutdown command");
 }
 
 static void
 on_reboot_clicked (GtkButton *button, gpointer user_data)
 {
+  g_print("Reboot button clicked\n");
   (void)button;
-  (void)user_data;
+  HyprMenuWindow *self = HYPRMENU_WINDOW(user_data);
   
-  g_spawn_command_line_async("systemctl reboot", NULL);
-  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(user_data));
-  if (app) {
-    g_application_quit(G_APPLICATION(app));
-  }
+  show_confirmation_dialog(self,
+                         "Reboot",
+                         "Are you sure you want to reboot the system?",
+                         "bash -c 'systemctl reboot || loginctl reboot'",
+                         "Failed to execute reboot command");
 }
 
 static void
 on_hibernate_clicked (GtkButton *button, gpointer user_data)
 {
+  g_print("Hibernate button clicked\n");
   (void)button;
-  (void)user_data;
+  HyprMenuWindow *self = HYPRMENU_WINDOW(user_data);
   
-  g_spawn_command_line_async("systemctl hibernate", NULL);
-  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(user_data));
-  if (app) {
-    g_application_quit(G_APPLICATION(app));
-  }
+  show_confirmation_dialog(self,
+                         "Hibernate",
+                         "Are you sure you want to hibernate the system?",
+                         "bash -c 'systemctl hibernate || loginctl hibernate'",
+                         "Failed to execute hibernate command");
 }
 
 static void
 on_sleep_clicked (GtkButton *button, gpointer user_data)
 {
+  g_print("Sleep button clicked\n");
   (void)button;
-  (void)user_data;
+  HyprMenuWindow *self = HYPRMENU_WINDOW(user_data);
   
-  g_spawn_command_line_async("systemctl suspend", NULL);
-  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(user_data));
-  if (app) {
-    g_application_quit(G_APPLICATION(app));
-  }
+  show_confirmation_dialog(self,
+                         "Sleep",
+                         "Are you sure you want to put the system to sleep?",
+                         "bash -c 'systemctl suspend || loginctl suspend'",
+                         "Failed to execute sleep command");
 }
 
 static void
 on_lock_clicked (GtkButton *button, gpointer user_data)
 {
+  g_print("Lock button clicked\n");
   (void)button;
-  (void)user_data;
+  HyprMenuWindow *self = HYPRMENU_WINDOW(user_data);
   
-  g_spawn_command_line_async("swaylock", NULL);
-  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(user_data));
-  if (app) {
-    g_application_quit(G_APPLICATION(app));
-  }
+  show_confirmation_dialog(self,
+                         "Lock",
+                         "Are you sure you want to lock the screen?",
+                         "loginctl lock-session",
+                         "Failed to execute lock command");
 }
 
 static GtkWidget*
 create_system_button (const char *icon_name, const char *label, GCallback callback, gpointer user_data)
 {
+  g_print("Creating system button: %s\n", label);
+  
   GtkWidget *button = gtk_button_new();
+  
+  // Set a unique name for debugging
+  gtk_widget_set_name(button, g_strdup_printf("system-button-%s", label));
   
   // Create icon
   GtkWidget *icon = gtk_image_new_from_icon_name(icon_name);
@@ -271,10 +475,21 @@ create_system_button (const char *icon_name, const char *label, GCallback callba
   // Set tooltip text (shown on hover)
   gtk_widget_set_tooltip_text(button, label);
   
-  // Connect signal
+  // Make button activatable and focusable
+  gtk_widget_set_can_focus(button, TRUE);
+  gtk_widget_set_focusable(button, TRUE);
+  
+  // Connect signal with debug print
   if (callback) {
-    g_signal_connect(button, "clicked", callback, user_data);
+    g_print("Connecting signal for button: %s\n", label);
+    gulong handler_id = g_signal_connect(button, "clicked", callback, user_data);
+    g_print("Signal handler ID for %s: %lu\n", label, handler_id);
   }
+  
+  // Add click controller explicitly
+  GtkGesture *click = gtk_gesture_click_new();
+  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), GDK_BUTTON_PRIMARY);
+  gtk_widget_add_controller(button, GTK_EVENT_CONTROLLER(click));
   
   return button;
 }
@@ -544,4 +759,26 @@ hyprmenu_window_show (HyprMenuWindow *self)
 {
   hyprmenu_app_grid_refresh (HYPRMENU_APP_GRID (self->app_grid));
   gtk_window_present (GTK_WINDOW (self));
+}
+
+static void
+execute_system_action(HyprMenuWindow *self, 
+                     const char *command,
+                     const char *error_message)
+{
+  g_print("Executing system action: %s\n", command);
+  
+  GError *error = NULL;
+  
+  // First close the menu
+  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(self));
+  if (app) {
+    g_application_quit(G_APPLICATION(app));
+  }
+
+  // Execute the command asynchronously
+  if (!g_spawn_command_line_async(command, &error)) {
+    g_warning("%s: %s", error_message, error->message);
+    g_error_free(error);
+  }
 } 
