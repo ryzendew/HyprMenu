@@ -500,9 +500,14 @@ hyprmenu_window_init (HyprMenuWindow *self)
   /* Set window properties */
   gtk_window_set_decorated (GTK_WINDOW (self), FALSE);
   gtk_window_set_resizable (GTK_WINDOW (self), TRUE);  // Allow resizing for proper grid view
-  
-  /* Set window size from configuration */
-  gtk_window_set_default_size(GTK_WINDOW(self), config->window_width, config->window_height);
+
+  int menu_width = config->window_width;
+  if (config->use_grid_view && (menu_width <= 0)) {
+    // Auto-calculate width: grid_columns * grid_item_size + padding
+    int padding = 48; // 24px left + 24px right, adjust as needed
+    menu_width = config->grid_columns * config->grid_item_size + padding;
+  }
+  gtk_window_set_default_size(GTK_WINDOW(self), menu_width, config->window_height);
   
   /* Initialize layer shell */
   GdkDisplay *display = gtk_widget_get_display(GTK_WIDGET(self));
@@ -634,6 +639,23 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_widget_set_vexpand (self->app_grid, TRUE);
   gtk_widget_set_halign(self->app_grid, GTK_ALIGN_FILL);
   gtk_box_append (GTK_BOX (self->main_box), self->app_grid);
+  
+  // Set grid columns if in grid view
+  if (config->use_grid_view) {
+    GtkWidget *category_list = NULL;
+    GObject *grid_obj = NULL;
+    // Try to get the category list from the app_grid
+    g_object_get(self->app_grid, "category_list", &category_list, NULL);
+    if (category_list) {
+      // Set columns for the flow box
+      GtkWidget *all_apps_grid = NULL;
+      g_object_get(category_list, "all_apps_grid", &all_apps_grid, NULL);
+      if (all_apps_grid) {
+        gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(all_apps_grid), config->grid_columns);
+        gtk_flow_box_set_min_children_per_line(GTK_FLOW_BOX(all_apps_grid), config->grid_columns);
+      }
+    }
+  }
   
   /* Create system buttons box at the bottom */
   self->system_buttons_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);

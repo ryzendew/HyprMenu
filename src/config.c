@@ -535,6 +535,13 @@ hyprmenu_config_save_with_error(GError **error)
     g_print("Key file value verified: use_grid_view=%s\n", verified_value ? "true" : "false");
   }
   
+  // Add a comment for grid_columns and window_width
+  g_key_file_set_comment(keyfile, "View", "grid_columns",
+    "Number of app columns in grid view. If you change this, the menu width will auto-adjust unless you set window_width explicitly.",
+    NULL);
+  g_key_file_set_comment(keyfile, "Layout", "window_width",
+    "Menu width in pixels. If unset or 0, will be auto-calculated from grid_columns in grid view.",
+    NULL);
   g_key_file_set_integer(keyfile, "View", "grid_columns", config->grid_columns);
   g_key_file_set_integer(keyfile, "View", "grid_item_size", config->grid_item_size);
   
