@@ -83,7 +83,7 @@ set_defaults(HyprMenuConfig *config)
   config->background_color = g_strdup("#1e1e1e");
   config->corner_radius = 12;
   config->border_width = 5;
-  config->border_color = g_strdup("rgba(31, 0, 88, 0.1)");
+  config->border_color = g_strdup("#444444");
   config->border_corner_radius = 12;
   
   // AGS-style effects
@@ -107,7 +107,7 @@ set_defaults(HyprMenuConfig *config)
   config->search_background_color = g_strdup("#323232");
   config->search_background_opacity = 0.7;
   config->search_corner_radius = 8;
-  config->search_text_color = g_strdup("#ffffff");
+  config->search_text_color = g_strdup("#eeeeee");
   config->search_font_size = 14;
   config->search_font_family = g_strdup("Sans");
   config->search_padding = 8;
@@ -116,7 +116,7 @@ set_defaults(HyprMenuConfig *config)
   config->app_entry_background_color = g_strdup("#3c3c3c");
   config->app_entry_background_opacity = 0.7;
   config->app_entry_corner_radius = 6;
-  config->app_entry_text_color = g_strdup("#ffffff");
+  config->app_entry_text_color = g_strdup("#eeeeee");
   config->app_entry_font_size = 12;
   config->app_entry_font_family = g_strdup("Sans");
   config->app_entry_padding = 6;
@@ -148,6 +148,16 @@ set_defaults(HyprMenuConfig *config)
   config->config_dir = g_build_filename(g_get_home_dir(), ".config", "hyprmenu", NULL);
   config->config_file = g_build_filename(config->config_dir, "hyprmenu.conf", NULL);
   config->css_file = g_build_filename(config->config_dir, "hyprmenu.css", NULL);
+  
+  // --- New color roles ---
+  config->text_color = g_strdup("#eeeeee");
+  config->button_color = g_strdup("#444444");
+  config->button_text_color = g_strdup("#eeeeee");
+  config->highlight_color = g_strdup("#ffb86c");
+  config->search_color = g_strdup("#323232");
+  config->system_button_color = g_strdup("#444444");
+  config->system_button_icon_color = g_strdup("#eeeeee");
+  config->use_pywal_colors = TRUE;
 }
 
 gboolean
@@ -198,6 +208,15 @@ hyprmenu_config_free()
   g_free(config->config_dir);
   g_free(config->config_file);
   g_free(config->css_file);
+  
+  // Free new color fields
+  g_free(config->text_color);
+  g_free(config->button_color);
+  g_free(config->button_text_color);
+  g_free(config->highlight_color);
+  g_free(config->search_color);
+  g_free(config->system_button_color);
+  g_free(config->system_button_icon_color);
   
   // Free config struct
   g_free(config);
@@ -264,6 +283,23 @@ hyprmenu_config_load()
     g_free(config->transparency_shadow_color);
     config->transparency_shadow_color = g_key_file_get_string(keyfile, "Style", "transparency_shadow_color", NULL);
     config->transparency_shadow_radius = g_key_file_get_integer(keyfile, "Style", "transparency_shadow_radius", NULL);
+    
+    // --- New color roles ---
+    g_free(config->text_color);
+    config->text_color = g_key_file_get_string(keyfile, "Style", "text_color", NULL);
+    g_free(config->button_color);
+    config->button_color = g_key_file_get_string(keyfile, "Style", "button_color", NULL);
+    g_free(config->button_text_color);
+    config->button_text_color = g_key_file_get_string(keyfile, "Style", "button_text_color", NULL);
+    g_free(config->highlight_color);
+    config->highlight_color = g_key_file_get_string(keyfile, "Style", "highlight_color", NULL);
+    g_free(config->search_color);
+    config->search_color = g_key_file_get_string(keyfile, "Style", "search_color", NULL);
+    g_free(config->system_button_color);
+    config->system_button_color = g_key_file_get_string(keyfile, "Style", "system_button_color", NULL);
+    g_free(config->system_button_icon_color);
+    config->system_button_icon_color = g_key_file_get_string(keyfile, "Style", "system_button_icon_color", NULL);
+    config->use_pywal_colors = g_key_file_get_boolean(keyfile, "Style", "use_pywal_colors", NULL);
   }
   
   // Behavior section
@@ -418,6 +454,16 @@ hyprmenu_config_save_with_error(GError **error)
   
   g_key_file_set_integer(keyfile, "View", "grid_columns", config->grid_columns);
   g_key_file_set_integer(keyfile, "View", "grid_item_size", config->grid_item_size);
+  
+  // --- New color roles ---
+  g_key_file_set_string(keyfile, "Style", "text_color", config->text_color);
+  g_key_file_set_string(keyfile, "Style", "button_color", config->button_color);
+  g_key_file_set_string(keyfile, "Style", "button_text_color", config->button_text_color);
+  g_key_file_set_string(keyfile, "Style", "highlight_color", config->highlight_color);
+  g_key_file_set_string(keyfile, "Style", "search_color", config->search_color);
+  g_key_file_set_string(keyfile, "Style", "system_button_color", config->system_button_color);
+  g_key_file_set_string(keyfile, "Style", "system_button_icon_color", config->system_button_icon_color);
+  g_key_file_set_boolean(keyfile, "Style", "use_pywal_colors", config->use_pywal_colors);
   
   // Save to file
   g_print("Writing config to: %s\n", config->config_file);

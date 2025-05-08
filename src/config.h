@@ -28,10 +28,8 @@ typedef struct _HyprMenuConfig {
   // Window style
   double background_opacity;
   double background_blur;
-  char *background_color;
   int corner_radius;
   int border_width;
-  char *border_color;
   int border_corner_radius; // Border rounded corners
   
   // AGS-style effects
@@ -96,7 +94,6 @@ typedef struct _HyprMenuConfig {
   gchar *theme_path;
   gchar *font_family;
   gint font_size;
-  gchar *text_color;
   gchar *selected_color;
   gint border_radius;
   gint padding;
@@ -116,6 +113,19 @@ typedef struct _HyprMenuConfig {
   gboolean use_grid_view;     // Use grid view instead of list view
   gint grid_columns;          // Number of columns in grid view
   gint grid_item_size;        // Size of grid items (square size in pixels)
+
+  // --- User/pywal color roles ---
+  char *background_color;
+  char *border_color;
+  char *text_color;
+  char *button_color;
+  char *button_text_color;
+  char *highlight_color;
+  char *search_color;
+  char *system_button_color;
+  char *system_button_icon_color;
+  // ---
+  gboolean use_pywal_colors;
 } HyprMenuConfig;
 
 // Global config instance
@@ -131,4 +141,17 @@ void hyprmenu_config_apply_css();
 
 // Position utility functions
 const gchar* hyprmenu_position_to_string(HyprMenuPosition position);
-HyprMenuPosition hyprmenu_position_from_string(const gchar *position_str); 
+HyprMenuPosition hyprmenu_position_from_string(const gchar *position_str);
+
+// Pywal color struct
+#define PYWAL_COLOR_COUNT 16
+
+typedef struct {
+  char *colors[PYWAL_COLOR_COUNT]; // colors[0] = color0, ...
+  char *special_background;
+  char *special_foreground;
+  char *special_cursor;
+} PywalColors;
+
+// Global pywal color instance
+extern PywalColors pywal_colors; 
