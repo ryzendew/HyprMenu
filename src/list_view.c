@@ -190,6 +190,8 @@ create_app_entry(HyprMenuListView* self, GDesktopAppInfo* app_info)
     gtk_widget_set_margin_end(entry->row, 4);
     gtk_widget_set_margin_top(entry->row, 2);
     gtk_widget_set_margin_bottom(entry->row, 2);
+    // Set the row height from config
+    gtk_widget_set_size_request(entry->row, -1, config->list_item_size);
     
     // Create icon
     entry->icon = gtk_image_new();
@@ -199,7 +201,9 @@ create_app_entry(HyprMenuListView* self, GDesktopAppInfo* app_info)
     } else {
         gtk_image_set_from_icon_name(GTK_IMAGE(entry->icon), "application-x-executable");
     }
-    gtk_image_set_pixel_size(GTK_IMAGE(entry->icon), config->app_icon_size);
+    // Set icon size proportional to list_item_size
+    int icon_size = config->list_item_size * 0.75;
+    gtk_image_set_pixel_size(GTK_IMAGE(entry->icon), icon_size);
     gtk_widget_set_margin_start(entry->icon, config->app_entry_padding);
     gtk_widget_add_css_class(entry->icon, "hyprmenu-app-icon");
     

@@ -142,7 +142,8 @@ set_defaults(HyprMenuConfig *config)
   // View settings
   config->use_grid_view = FALSE;  // Default to list view
   config->grid_columns = 4;       // Exactly 4 columns in grid view
-  config->grid_item_size = 80;    // Smaller square size for a tile-like appearance
+  config->grid_item_size = 100;   // Smaller square size for a tile-like appearance
+  config->list_item_size = 48;    // Default list item height
   
   // File paths
   config->config_dir = g_build_filename(g_get_home_dir(), ".config", "hyprmenu", NULL);
@@ -384,9 +385,11 @@ hyprmenu_config_load()
     if (!g_key_file_has_key(keyfile, "View", "use_grid_view", NULL)) missing_option = TRUE;
     if (!g_key_file_has_key(keyfile, "View", "grid_columns", NULL)) missing_option = TRUE;
     if (!g_key_file_has_key(keyfile, "View", "grid_item_size", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "View", "list_item_size", NULL)) missing_option = TRUE;
     config->use_grid_view = g_key_file_get_boolean(keyfile, "View", "use_grid_view", NULL);
     config->grid_columns = g_key_file_get_integer(keyfile, "View", "grid_columns", NULL);
     config->grid_item_size = g_key_file_get_integer(keyfile, "View", "grid_item_size", NULL);
+    config->list_item_size = g_key_file_get_integer(keyfile, "View", "list_item_size", NULL);
   }
   
   // If any option is missing, regenerate the config file
@@ -544,6 +547,7 @@ hyprmenu_config_save_with_error(GError **error)
     NULL);
   g_key_file_set_integer(keyfile, "View", "grid_columns", config->grid_columns);
   g_key_file_set_integer(keyfile, "View", "grid_item_size", config->grid_item_size);
+  g_key_file_set_integer(keyfile, "View", "list_item_size", config->list_item_size);
   
   // --- Unified color roles ---
   g_key_file_set_string(keyfile, "Style", "background_color", config->background_color);

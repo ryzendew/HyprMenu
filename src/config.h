@@ -105,8 +105,9 @@ typedef struct _HyprMenuConfig {
   
   // View settings
   gboolean use_grid_view;     // Use grid view instead of list view
-  gint grid_columns;          // Number of columns in grid view
-  gint grid_item_size;        // Size of grid items (square size in pixels)
+  int grid_columns;          // Number of columns in grid view
+  int grid_item_size;        // Size of grid items (square size in pixels)
+  int list_item_size;        // Height of items in list view
 
   // --- User/pywal/ags color roles ---
   char *background_color;
