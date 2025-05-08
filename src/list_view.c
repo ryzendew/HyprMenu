@@ -90,6 +90,14 @@ on_app_activated(GtkGestureClick* gesture,
     }
     
     LIST_VIEW_DEBUG("Successfully launched app: %s", entry->name);
+
+    // Close the menu window if configured to do so
+    if (config->close_on_app_launch) {
+        GtkRoot *root = gtk_widget_get_root(entry->row);
+        if (GTK_IS_WINDOW(root)) {
+            gtk_window_close(GTK_WINDOW(root));
+        }
+    }
 }
 
 static GtkWidget*
