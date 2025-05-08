@@ -4,6 +4,7 @@
 #include "config.h"
 #include <gio-unix-2.0/gio/gdesktopappinfo.h>
 #include <gdk/gdk.h>
+#include <unistd.h> // For sync() function
 
 struct _HyprMenuAppGrid
 {
@@ -83,6 +84,7 @@ static void
 on_toggle_view_clicked(GtkButton *button, gpointer user_data)
 {
   HyprMenuAppGrid *self = HYPRMENU_APP_GRID(user_data);
+  g_print("Toggle button clicked! Current mode: %s\n", config->use_grid_view ? "grid" : "list");
   hyprmenu_app_grid_toggle_view(self);
 }
 
@@ -123,7 +125,17 @@ hyprmenu_app_grid_init (HyprMenuAppGrid *self)
   gtk_widget_add_css_class(self->toggle_button, "flat");
   gtk_widget_set_tooltip_text(self->toggle_button, 
     config->use_grid_view ? "Switch to List View" : "Switch to Grid View");
+  
+  // Make toggle button more visible with a distinct icon size
+  GtkWidget *icon = gtk_button_get_child(GTK_BUTTON(self->toggle_button));
+  if (GTK_IS_IMAGE(icon)) {
+    gtk_image_set_pixel_size(GTK_IMAGE(icon), 20); // Make icon slightly larger
+  }
+  
   g_signal_connect(self->toggle_button, "clicked", G_CALLBACK(on_toggle_view_clicked), self);
+  g_print("Toggle button created with icon %s for mode: %s\n", 
+          config->use_grid_view ? "view-list-symbolic" : "view-grid-symbolic",
+          config->use_grid_view ? "grid" : "list");
   
   /* Create scrolled window */
   self->scrolled_window = gtk_scrolled_window_new ();
@@ -283,8 +295,33 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
 {
   g_return_if_fail(HYPRMENU_IS_APP_GRID(self));
   
+  gboolean old_mode = config->use_grid_view;
+  
+  g_print("Toggle view button clicked - changing from %s to %s\n", 
+          old_mode ? "grid" : "list", 
+          !old_mode ? "grid" : "list");
+  
   /* Update config */
   config->use_grid_view = !config->use_grid_view;
+  
+  g_print("Config updated: use_grid_view now = %s\n", config->use_grid_view ? "true" : "false");
+  
+  /* Save configuration immediately */
+  GError *error = NULL;
+  gboolean saved = hyprmenu_config_save_with_error(&error);
+  if (!saved) {
+    g_warning("Failed to save configuration: %s", error ? error->message : "Unknown error");
+    g_clear_error(&error);
+  } else {
+    g_print("Configuration saved successfully with view mode: %s\n", 
+            config->use_grid_view ? "grid" : "list");
+    
+    // Make absolutely sure changes are written to disk
+    fsync(0);  // Use fsync on stdout instead of sync()
+  }
+  
+  /* Verify the config value was actually changed */
+  g_print("Double-checking config->use_grid_view = %s\n", config->use_grid_view ? "true" : "false");
   
   /* Update toggle button */
   gtk_button_set_icon_name(GTK_BUTTON(self->toggle_button),
@@ -295,6 +332,7 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
   /* Switch views */
   GtkWidget *new_view;
   if (config->use_grid_view) {
+    g_print("Setting view to grid\n");
     new_view = self->category_list;
     hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), TRUE);
   } else {
@@ -304,12 +342,17 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
       config->use_grid_view = TRUE;
       new_view = self->category_list;
       hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), TRUE);
+      
+      // Save the config again if we had to revert
+      hyprmenu_config_save();
     } else {
+      g_print("Setting view to list\n");
       new_view = self->list_view;
     }
   }
   
   if (new_view != self->current_view) {
+    g_print("Switching current view\n");
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(self->scrolled_window), new_view);
     self->current_view = new_view;
     
@@ -317,10 +360,9 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
     if (self->filter_text) {
       hyprmenu_app_grid_filter(self, self->filter_text);
     }
+  } else {
+    g_print("View didn't change (new_view == current_view)\n");
   }
-  
-  /* Save config changes */
-  hyprmenu_config_save();
 }
 
 GtkWidget* hyprmenu_app_grid_get_toggle_button(HyprMenuAppGrid *self) {

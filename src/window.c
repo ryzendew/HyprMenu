@@ -429,8 +429,6 @@ hyprmenu_window_init (HyprMenuWindow *self)
   GtkWidget *hibernate_button = create_system_button("system-suspend-hibernate-symbolic", "Hibernate", G_CALLBACK(on_hibernate_clicked), self);
   GtkWidget *sleep_button = create_system_button("system-suspend-symbolic", "Sleep", G_CALLBACK(on_sleep_clicked), self);
   GtkWidget *lock_button = create_system_button("system-lock-screen-symbolic", "Lock", G_CALLBACK(on_lock_clicked), self);
-  // Get the grid/list toggle button from the app grid
-  GtkWidget *toggle_button = hyprmenu_app_grid_get_toggle_button((HyprMenuAppGrid*)self->app_grid);
   
   gtk_box_append(GTK_BOX(self->system_buttons_box), logout_button);
   gtk_box_append(GTK_BOX(self->system_buttons_box), shutdown_button);
@@ -438,8 +436,6 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_box_append(GTK_BOX(self->system_buttons_box), hibernate_button);
   gtk_box_append(GTK_BOX(self->system_buttons_box), sleep_button);
   gtk_box_append(GTK_BOX(self->system_buttons_box), lock_button);
-  // Add a separator or spacing if desired, then the toggle button
-  gtk_box_append(GTK_BOX(self->system_buttons_box), toggle_button);
   
   /* Add system buttons to bottom of main container */
   gtk_box_append(GTK_BOX(v_box), self->system_buttons_box);

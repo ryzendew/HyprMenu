@@ -4,7 +4,56 @@
 #include <string.h>
 
 // Forward declaration of the comparison function
-static gint compare_rows_by_app_name(gconstpointer a, gconstpointer b);
+static gint compare_rows_by_app_name(GtkListBoxRow *row1, GtkListBoxRow *row2, gpointer user_data);
+
+// Helper function to extract app name from a list box row
+static const char* get_app_name_from_row(GtkListBoxRow *row) {
+  if (!row) return "";
+  
+  GtkWidget *child = gtk_list_box_row_get_child(row);
+  if (!child) return "";
+  
+  // The child should be a box containing a label with the app name
+  GtkWidget *label = NULL;
+  
+  // Look for the label in the children
+  GtkWidget *box = GTK_WIDGET(child);
+  GtkWidget *first_child = gtk_widget_get_first_child(box);
+  if (first_child) {
+    // Skip the icon, find the name label
+    GtkWidget *child = gtk_widget_get_next_sibling(first_child);
+    while (child) {
+      if (GTK_IS_LABEL(child)) {
+        label = child;
+        break;
+      }
+      child = gtk_widget_get_next_sibling(child);
+    }
+  }
+  
+  if (!GTK_IS_LABEL(label)) return "";
+  
+  return gtk_label_get_text(GTK_LABEL(label));
+}
+
+// Compare function for sorting by app name - using proper GtkListBoxSortFunc signature
+static gint compare_rows_by_app_name(GtkListBoxRow *row1, GtkListBoxRow *row2, gpointer user_data) {
+  (void)user_data; // Unused parameter
+  
+  const char *name_a = get_app_name_from_row(row1);
+  const char *name_b = get_app_name_from_row(row2);
+  
+  g_print("Comparing: '%s' vs '%s'\n", name_a, name_b);
+  
+  return g_utf8_collate(name_a, name_b);
+}
+
+// Function to set up alphabetical sorting for any list box
+static void setup_alphabetical_sorting(GtkListBox *list_box) {
+  if (!list_box) return;
+  gtk_list_box_set_sort_func(list_box, compare_rows_by_app_name, NULL, NULL);
+  g_print("List box sort function set to alphabetical order\n");
+}
 
 static void
 on_list_row_clicked(GtkGestureClick *gesture,
@@ -194,7 +243,7 @@ hyprmenu_category_list_add_category (HyprMenuCategoryList *self,
     gtk_flow_box_append(GTK_FLOW_BOX(self->all_apps_grid), app_widget);
     return;
   }
-
+  
   /* LIST VIEW IMPLEMENTATION */
   HyprMenuAppEntry *entry = HYPRMENU_APP_ENTRY(app_widget);
   
@@ -213,9 +262,19 @@ hyprmenu_category_list_add_category (HyprMenuCategoryList *self,
     gtk_label_set_xalign (GTK_LABEL (title), 0);
     gtk_box_append (GTK_BOX (category_box), title);
     
+    /* Create a list box for this category to enable sorting */
+    GtkWidget *list_box = gtk_list_box_new();
+    gtk_list_box_set_selection_mode(GTK_LIST_BOX(list_box), GTK_SELECTION_NONE);
+    gtk_widget_add_css_class(list_box, "hyprmenu-category-list-box");
+    gtk_box_append(GTK_BOX(category_box), list_box);
+    
+    /* Set up alphabetical sorting */
+    setup_alphabetical_sorting(GTK_LIST_BOX(list_box));
+    
     /* Store category name */
     g_object_set_data_full (G_OBJECT (category_box), "category-name",
                            g_strdup (category_name), g_free);
+    g_object_set_data (G_OBJECT (category_box), "list-box", list_box);
     
     /* Add to main box */
     gtk_box_append (GTK_BOX (self->main_box), category_box);
@@ -223,88 +282,64 @@ hyprmenu_category_list_add_category (HyprMenuCategoryList *self,
     /* Store in hash table */
     g_hash_table_insert (self->category_boxes, g_strdup(category_name), category_box);
   }
-
-  /* Create a custom row for this app */
-  GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-  gtk_widget_add_css_class(row, "hyprmenu-list-row");
-  gtk_widget_set_hexpand(row, TRUE);
   
-  /* Get app info directly */
+  /* Get the list box from the category box */
+  GtkWidget *list_box = g_object_get_data(G_OBJECT(category_box), "list-box");
+  if (!list_box) {
+    g_warning("Category box doesn't have a list box");
+    return;
+  }
+  
+  /* Create a custom row for this app */
+  GtkWidget *row_content = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+  gtk_widget_add_css_class(row_content, "hyprmenu-list-row-content");
+  gtk_widget_set_hexpand(row_content, TRUE);
+  
+  /* Add app icon */
+  GIcon *icon = hyprmenu_app_entry_get_icon(entry);
+  if (icon) {
+    GtkWidget *image = gtk_image_new_from_gicon(icon);
+    gtk_image_set_pixel_size(GTK_IMAGE(image), 24);
+    gtk_box_append(GTK_BOX(row_content), image);
+  }
+  
+  /* Add app name */
   const char *app_name = hyprmenu_app_entry_get_app_name(entry);
+  GtkWidget *name_label = gtk_label_new(app_name);
+  gtk_label_set_ellipsize(GTK_LABEL(name_label), PANGO_ELLIPSIZE_END);
+  gtk_widget_set_hexpand(name_label, TRUE);
+  gtk_label_set_xalign(GTK_LABEL(name_label), 0);
+  gtk_box_append(GTK_BOX(row_content), name_label);
+  
+  /* Create a new list box row and add the content */
+  GtkWidget *list_row = gtk_list_box_row_new();
+  gtk_widget_add_css_class(list_row, "hyprmenu-list-row");
+  gtk_list_box_row_set_child(GTK_LIST_BOX_ROW(list_row), row_content);
   
   /* Store the app widget reference in the row */
-  g_object_set_data_full(G_OBJECT(row), "app-widget", g_object_ref(app_widget), g_object_unref);
+  g_object_set_data_full(G_OBJECT(list_row), "app-widget", g_object_ref(app_widget), g_object_unref);
   
   /* Add click handler */
   GtkGesture *click_gesture = gtk_gesture_click_new();
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click_gesture), GDK_BUTTON_PRIMARY);
   g_signal_connect(click_gesture, "pressed", G_CALLBACK(on_list_row_clicked), app_widget);
-  gtk_widget_add_controller(row, GTK_EVENT_CONTROLLER(click_gesture));
+  gtk_widget_add_controller(list_row, GTK_EVENT_CONTROLLER(click_gesture));
   
-  /* Add the row to the category box */
-  gtk_box_append(GTK_BOX(category_box), row);
-  
-  /* Sort the category box contents alphabetically */
-  GList *children = NULL;
-  GtkWidget *child = gtk_widget_get_first_child(category_box);
-  while (child) {
-    GtkWidget *next = gtk_widget_get_next_sibling(child);
-    if (GTK_IS_LABEL(child)) {
-      // Keep the title at the top
-      gtk_box_reorder_child_after(GTK_BOX(category_box), child, NULL);
-    } else {
-      children = g_list_append(children, child);
-    }
-    child = next;
-  }
-  
-  // Sort the list of rows by app name
-  children = g_list_sort(children, (GCompareFunc)compare_rows_by_app_name);
-  
-  // Reorder the rows
-  for (GList *l = children; l != NULL; l = l->next) {
-    GtkWidget *row = l->data;
-    gtk_box_reorder_child_after(GTK_BOX(category_box), row, NULL);
-  }
-  
-  g_list_free(children);
+  /* Add the row to the list box */
+  gtk_list_box_append(GTK_LIST_BOX(list_box), list_row);
 }
 
-// Add this helper function for sorting
-static gint
-compare_rows_by_app_name(gconstpointer a, gconstpointer b)
-{
-  GtkWidget *row_a = GTK_WIDGET(a);
-  GtkWidget *row_b = GTK_WIDGET(b);
-  
-  HyprMenuAppEntry *entry_a = g_object_get_data(G_OBJECT(row_a), "app-widget");
-  HyprMenuAppEntry *entry_b = g_object_get_data(G_OBJECT(row_b), "app-widget");
-  
-  if (!entry_a || !entry_b) return 0;
-  
-  const char *name_a = hyprmenu_app_entry_get_app_name(entry_a);
-  const char *name_b = hyprmenu_app_entry_get_app_name(entry_b);
-  
-  if (!name_a || !name_b) return 0;
-  
-  return g_ascii_strcasecmp(name_a, name_b);
-}
-
-GtkWidget *
-hyprmenu_category_list_get_category_content (HyprMenuCategoryList *self, 
-                                            const char *category_name)
-{
-  if (!self || !category_name) return NULL;
-  return g_hash_table_lookup (self->category_boxes, category_name);
-}
-
-void 
+void
 hyprmenu_category_list_set_grid_view (HyprMenuCategoryList *self, gboolean use_grid_view)
 {
   if (!self) return;
   
   /* Skip if already in the requested mode */
   if (self->grid_view_mode == use_grid_view) return;
+  
+  g_print("hyprmenu_category_list_set_grid_view: Changing from %s to %s\n",
+         self->grid_view_mode ? "grid" : "list",
+         use_grid_view ? "grid" : "list");
   
   /* Update the mode */
   self->grid_view_mode = use_grid_view;
@@ -346,6 +381,9 @@ hyprmenu_category_list_set_grid_view (HyprMenuCategoryList *self, gboolean use_g
             // Get the app_widget from the list row
             GtkWidget *app_widget = g_object_get_data(G_OBJECT(child), "app-widget");
             if (app_widget) {
+              // Ensure we ref the widget before adding it to our list to prevent it from being freed
+              g_object_ref(app_widget);
+              
               // Prepare for grid view
               hyprmenu_app_entry_set_grid_layout(HYPRMENU_APP_ENTRY(app_widget), TRUE);
               app_widgets = g_list_append(app_widgets, app_widget);
@@ -362,6 +400,7 @@ hyprmenu_category_list_set_grid_view (HyprMenuCategoryList *self, gboolean use_g
     /* Add all app entries to the grid */
     for (GList *l = app_widgets; l != NULL; l = l->next) {
       gtk_flow_box_append(GTK_FLOW_BOX(self->all_apps_grid), GTK_WIDGET(l->data));
+      g_object_unref(GTK_WIDGET(l->data)); // Balance the ref from above
     }
     g_list_free(app_widgets);
     
@@ -387,26 +426,43 @@ hyprmenu_category_list_set_grid_view (HyprMenuCategoryList *self, gboolean use_g
     GHashTable *category_app_entries = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, 
       (GDestroyNotify)g_slist_free);
     
+    // Safe way to iterate through children while removing them
+    GList *entries_to_process = NULL;
     GtkWidget *child = gtk_widget_get_first_child(self->all_apps_grid);
     while (child) {
       GtkWidget *next = gtk_widget_get_next_sibling(child);
       
-      if (HYPRMENU_IS_APP_ENTRY(child)) {
-        HyprMenuAppEntry *entry = HYPRMENU_APP_ENTRY(child);
-        
-        /* Get the first category */
-        const char **categories = hyprmenu_app_entry_get_categories(entry);
-        const char *category = categories && categories[0] ? categories[0] : "Other";
-        
-        /* Get or create list for this category */
-        GSList *category_entries = g_hash_table_lookup(category_app_entries, category);
-        category_entries = g_slist_append(category_entries, entry);
-        g_hash_table_insert(category_app_entries, g_strdup(category), category_entries);
-        
-        /* Remove from grid */
-        gtk_flow_box_remove(GTK_FLOW_BOX(self->all_apps_grid), child);
+      if (HYPRMENU_IS_APP_ENTRY(gtk_flow_box_child_get_child(GTK_FLOW_BOX_CHILD(child)))) {
+        // Ref the entry while we store it to prevent premature deletion
+        GtkWidget *entry_widget = gtk_flow_box_child_get_child(GTK_FLOW_BOX_CHILD(child));
+        g_object_ref(entry_widget);
+        entries_to_process = g_list_append(entries_to_process, entry_widget);
       }
       
+      child = next;
+    }
+    
+    // Process the entries outside the loop to avoid reference issues
+    for (GList *l = entries_to_process; l != NULL; l = l->next) {
+      HyprMenuAppEntry *entry = HYPRMENU_APP_ENTRY(l->data);
+      
+      /* Get the first category */
+      const char **categories = hyprmenu_app_entry_get_categories(entry);
+      const char *category = categories && categories[0] ? categories[0] : "Other";
+      
+      /* Get or create list for this category */
+      GSList *category_entries = g_hash_table_lookup(category_app_entries, category);
+      category_entries = g_slist_append(category_entries, entry);
+      g_hash_table_insert(category_app_entries, g_strdup(category), category_entries);
+      
+      /* No need to remove from grid at this stage */
+    }
+    
+    // Now remove all entries from grid
+    child = gtk_widget_get_first_child(self->all_apps_grid);
+    while (child) {
+      GtkWidget *next = gtk_widget_get_next_sibling(child);
+      gtk_flow_box_remove(GTK_FLOW_BOX(self->all_apps_grid), child);
       child = next;
     }
     
@@ -430,11 +486,15 @@ hyprmenu_category_list_set_grid_view (HyprMenuCategoryList *self, gboolean use_g
         
         // Add to category
         hyprmenu_category_list_add_category(self, category_name, GTK_WIDGET(entry));
+        
+        // Now we can unref the entry since it's now owned by its new parent
+        g_object_unref(entry);
       }
     }
     
     g_list_free(categories);
     g_hash_table_destroy(category_app_entries);
+    g_list_free(entries_to_process);
     
     /* Set visibility */
     gtk_widget_set_visible(self->all_apps_grid, FALSE);

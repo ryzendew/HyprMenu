@@ -123,6 +123,7 @@ gboolean hyprmenu_config_init();
 void hyprmenu_config_free();
 gboolean hyprmenu_config_load();
 gboolean hyprmenu_config_save();
+gboolean hyprmenu_config_save_with_error(GError **error);
 void hyprmenu_config_apply_css();
 
 // Position utility functions

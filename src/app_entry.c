@@ -406,4 +406,16 @@ hyprmenu_app_entry_launch (HyprMenuAppEntry *self)
   }
   
   launch_application(self->app_info, GTK_WIDGET(self));
-} 
+}
+
+GIcon*
+hyprmenu_app_entry_get_icon (HyprMenuAppEntry *self)
+{
+  g_return_val_if_fail(HYPRMENU_IS_APP_ENTRY(self), NULL);
+  
+  if (self->app_info) {
+    return g_app_info_get_icon(G_APP_INFO(self->app_info));
+  }
+  
+  return NULL;
+}

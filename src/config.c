@@ -1,6 +1,8 @@
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 // Global config instance
 HyprMenuConfig *config = NULL;
@@ -276,9 +278,75 @@ hyprmenu_config_load()
 }
 
 gboolean
-hyprmenu_config_save()
+hyprmenu_config_save_with_error(GError **error)
 {
+  // For background saving, avoid too much debug printing
+  static gboolean is_saving = FALSE;
+  
+  // Prevent concurrent saves
+  if (is_saving) {
+    g_set_error(error, G_IO_ERROR, G_IO_ERROR_BUSY, "Config save already in progress");
+    return FALSE;
+  }
+  
+  g_print("hyprmenu_config_save_with_error: Starting save operation\n");
+  is_saving = TRUE;
+  
+  // Prevent saving as root
+  if (geteuid() == 0) {
+    g_set_error(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED, 
+                "Refusing to save config as root. Please run HyprMenu as a normal user.");
+    is_saving = FALSE;
+    return FALSE;
+  }
+  g_print("hyprmenu_config_save_with_error: Not running as root, proceeding\n");
+
+  // Check if config directory exists, create if not
+  if (!g_file_test(config->config_dir, G_FILE_TEST_IS_DIR)) {
+    g_print("Creating config directory: %s\n", config->config_dir);
+    if (g_mkdir_with_parents(config->config_dir, 0755) != 0) {
+      g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, 
+                  "Failed to create config directory: %s", config->config_dir);
+      is_saving = FALSE;
+      return FALSE;
+    }
+  }
+
+  // Check if config file is writable (if it exists)
+  if (g_file_test(config->config_file, G_FILE_TEST_EXISTS)) {
+    if (access(config->config_file, W_OK) != 0) {
+      g_set_error(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED,
+                  "Config file %s is not writable by the current user.", config->config_file);
+      is_saving = FALSE;
+      return FALSE;
+    }
+    g_print("hyprmenu_config_save_with_error: Config file exists and is writable\n");
+  } else {
+    // Check if parent directory is writable
+    char *parent_dir = g_path_get_dirname(config->config_file);
+    if (access(parent_dir, W_OK) != 0) {
+      g_set_error(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED,
+                  "Parent directory %s is not writable by the current user.", parent_dir);
+      g_free(parent_dir);
+      is_saving = FALSE;
+      return FALSE;
+    }
+    g_free(parent_dir);
+    g_print("hyprmenu_config_save_with_error: Config file doesn't exist yet, will create\n");
+  }
+
   g_autoptr(GKeyFile) keyfile = g_key_file_new();
+  
+  // Read existing file if it exists to preserve other settings
+  if (g_file_test(config->config_file, G_FILE_TEST_EXISTS)) {
+    g_print("Reading existing config file to preserve settings\n");
+    GError *load_error = NULL;
+    gboolean loaded = g_key_file_load_from_file(keyfile, config->config_file, G_KEY_FILE_KEEP_COMMENTS, &load_error);
+    if (!loaded) {
+      g_warning("Failed to load existing config file: %s. Will create a new one", load_error->message);
+      g_error_free(load_error);
+    }
+  }
   
   // Window layout
   g_key_file_set_integer(keyfile, "Layout", "window_width", config->window_width);
@@ -323,25 +391,58 @@ hyprmenu_config_save()
   g_key_file_set_boolean(keyfile, "Behavior", "focus_search_on_open", config->focus_search_on_open);
   g_key_file_set_integer(keyfile, "Behavior", "max_recent_apps", config->max_recent_apps);
   
-  // View settings
+  // View settings - this is what we're primarily concerned with
+  g_print("Writing view settings: use_grid_view=%s\n", config->use_grid_view ? "true" : "false");
   g_key_file_set_boolean(keyfile, "View", "use_grid_view", config->use_grid_view);
+  
+  // Verify the value was correctly set in the key file
+  GError *verify_error = NULL;
+  gboolean verified_value = g_key_file_get_boolean(keyfile, "View", "use_grid_view", &verify_error);
+  if (verify_error) {
+    g_print("Error verifying view setting: %s\n", verify_error->message);
+    g_error_free(verify_error);
+  } else {
+    g_print("Key file value verified: use_grid_view=%s\n", verified_value ? "true" : "false");
+  }
+  
   g_key_file_set_integer(keyfile, "View", "grid_columns", config->grid_columns);
   g_key_file_set_integer(keyfile, "View", "grid_item_size", config->grid_item_size);
   
   // Save to file
-  g_autoptr(GError) error = NULL;
-  g_autofree char *data = g_key_file_to_data(keyfile, NULL, &error);
+  g_print("Writing config to: %s\n", config->config_file);
+  g_autofree char *data = g_key_file_to_data(keyfile, NULL, error);
   if (!data) {
-    g_warning("Failed to convert config to data: %s", error->message);
+    g_warning("Failed to convert config to data: %s", (*error)->message);
+    is_saving = FALSE;
     return FALSE;
   }
   
-  if (!g_file_set_contents(config->config_file, data, -1, &error)) {
-    g_warning("Failed to save config file: %s", error->message);
+  if (!g_file_set_contents(config->config_file, data, -1, error)) {
+    g_warning("Failed to save config file: %s", (*error)->message);
+    is_saving = FALSE;
     return FALSE;
   }
   
+  // Force sync to ensure the file is written to disk
+  fsync(0);  // Use fsync on stdout instead of sync()
+  
+  g_print("Configuration saved successfully\n");
+  is_saving = FALSE;
   return TRUE;
+}
+
+gboolean
+hyprmenu_config_save()
+{
+  GError *error = NULL;
+  gboolean result = hyprmenu_config_save_with_error(&error);
+  
+  if (!result && error) {
+    g_warning("Config save failed: %s", error->message);
+    g_error_free(error);
+  }
+  
+  return result;
 }
 
 void

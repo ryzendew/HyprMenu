@@ -63,9 +63,13 @@ vendor/
 *.pid.lock
 
 # System files
-*.conf
-*.desktop
+# *.conf  # Commented out because we want to keep hyprmenu.conf
+# *.desktop  # Commented out because we want to keep org.hyprmenu.desktop
 *.service
+
+# Debug files
+debug_*.log
+app_debug.log
 
 # Temporary files
 *.tmp
