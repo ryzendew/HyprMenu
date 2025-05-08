@@ -2,6 +2,13 @@
 
 A modern application launcher for Hyprland, built with GTK4 and GTK Layer Shell.
 
+![image](https://github.com/user-attachments/assets/ef651c22-771c-42ff-97d7-66bb88bd2af3)
+
+![image](https://github.com/user-attachments/assets/94718c1a-754a-4891-8e84-8a4ef7aa1676)
+
+![image](https://github.com/user-attachments/assets/2737c508-6607-4eec-b575-01282f6948d6)
+
+
 ## Requirements
 
 - Wayland compositor (specifically designed for Hyprland)
