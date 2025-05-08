@@ -458,6 +458,12 @@ hyprmenu_config_save_with_error(GError **error)
 
   g_autoptr(GKeyFile) keyfile = g_key_file_new();
   
+  // Add a comment for color picker support
+  g_key_file_set_comment(keyfile, NULL, NULL,
+    "All color values support #RRGGBB, #RRGGBBAA, rgb(), or rgba() formats.\n"
+    "You can use the color picker in VSCode or any compatible editor!",
+    NULL);
+  
   // Read existing file if it exists to preserve other settings
   if (g_file_test(config->config_file, G_FILE_TEST_EXISTS)) {
     g_print("Reading existing config file to preserve settings\n");
