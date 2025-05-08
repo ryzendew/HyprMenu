@@ -16,6 +16,7 @@ struct _HyprMenuAppEntry
   GtkWidget *name_label;
   
   gboolean is_grid_layout;  // Whether we're using grid layout (vertical)
+  int icon_size;
 };
 
 G_DEFINE_TYPE (HyprMenuAppEntry, hyprmenu_app_entry, GTK_TYPE_BUTTON)
@@ -230,6 +231,7 @@ hyprmenu_app_entry_init (HyprMenuAppEntry *self)
 {
   /* Initialize layout mode - default to horizontal */
   self->is_grid_layout = FALSE;
+  self->icon_size = 48;  // Default icon size
   
   /* Create main box - horizontal for list view by default */
   self->main_box = create_list_layout(self);
@@ -418,4 +420,51 @@ hyprmenu_app_entry_get_icon (HyprMenuAppEntry *self)
   }
   
   return NULL;
+}
+
+void
+hyprmenu_app_entry_set_icon_size(HyprMenuAppEntry *self, int size)
+{
+  g_return_if_fail(HYPRMENU_IS_APP_ENTRY(self));
+  
+  self->icon_size = size;
+  if (GTK_IS_IMAGE(self->icon)) {
+    gtk_image_set_pixel_size(GTK_IMAGE(self->icon), size);
+  }
+}
+
+static void
+update_layout(HyprMenuAppEntry *self)
+{
+  if (!self->icon || !self->name_label) return;
+  
+  if (self->is_grid_layout) {
+    // Grid layout: icon above label
+    gtk_widget_set_halign(self->icon, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(self->icon, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(self->icon, FALSE);
+    gtk_widget_set_vexpand(self->icon, FALSE);
+    gtk_image_set_pixel_size(GTK_IMAGE(self->icon), self->icon_size);
+    
+    gtk_widget_set_halign(self->name_label, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(self->name_label, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(self->name_label, TRUE);
+    gtk_widget_set_vexpand(self->name_label, FALSE);
+    
+    // ... rest of grid layout code ...
+  } else {
+    // List layout: icon to the left of label
+    gtk_widget_set_halign(self->icon, GTK_ALIGN_START);
+    gtk_widget_set_valign(self->icon, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(self->icon, FALSE);
+    gtk_widget_set_vexpand(self->icon, FALSE);
+    gtk_image_set_pixel_size(GTK_IMAGE(self->icon), 24);  // Smaller icon for list view
+    
+    gtk_widget_set_halign(self->name_label, GTK_ALIGN_START);
+    gtk_widget_set_valign(self->name_label, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(self->name_label, TRUE);
+    gtk_widget_set_vexpand(self->name_label, FALSE);
+    
+    // ... rest of list layout code ...
+  }
 }

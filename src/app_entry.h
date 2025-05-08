@@ -13,6 +13,7 @@ const char* hyprmenu_app_entry_get_app_name (HyprMenuAppEntry *self);
 const char* hyprmenu_app_entry_get_app_id (HyprMenuAppEntry *self);
 const char** hyprmenu_app_entry_get_categories (HyprMenuAppEntry *self);
 void hyprmenu_app_entry_set_grid_layout (HyprMenuAppEntry *self, gboolean is_grid);
+void hyprmenu_app_entry_set_icon_size(HyprMenuAppEntry *self, int size);
 GIcon* hyprmenu_app_entry_get_icon (HyprMenuAppEntry *self);
 
 GDesktopAppInfo* hyprmenu_app_entry_get_app_info (HyprMenuAppEntry *self);

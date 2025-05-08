@@ -136,8 +136,12 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   gtk_flow_box_set_selection_mode(GTK_FLOW_BOX(self->all_apps_grid), GTK_SELECTION_NONE);
   gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), config->grid_columns);
   
-  // Set the size of each child (app button) in the grid
-  g_object_set(self->all_apps_grid, "row-spacing", 12, "column-spacing", 12, NULL);
+  // Calculate spacing based on grid item size for better proportions
+  int spacing = config->grid_item_size / 8;  // 1/8th of item size for spacing
+  g_object_set(self->all_apps_grid, 
+    "row-spacing", spacing,
+    "column-spacing", spacing,
+    NULL);
   
   /* Set up sorting for grid view */
   gtk_flow_box_set_sort_func(GTK_FLOW_BOX(self->all_apps_grid),
@@ -242,8 +246,13 @@ hyprmenu_category_list_add_category (HyprMenuCategoryList *self,
     /* Set the app widget to grid layout mode */
     hyprmenu_app_entry_set_grid_layout(HYPRMENU_APP_ENTRY(app_widget), TRUE);
     
-    /* Add to flow box */
+    /* Set size request for the app widget */
     gtk_widget_set_size_request(app_widget, config->grid_item_size, config->grid_item_size);
+    
+    /* Set the icon size proportionally to the grid item size */
+    hyprmenu_app_entry_set_icon_size(HYPRMENU_APP_ENTRY(app_widget), config->grid_item_size * 0.6);
+    
+    /* Add to flow box */
     gtk_flow_box_append(GTK_FLOW_BOX(self->all_apps_grid), app_widget);
     return;
   }
@@ -402,8 +411,11 @@ hyprmenu_category_list_set_grid_view (HyprMenuCategoryList *self, gboolean use_g
     
     /* Add all app entries to the grid */
     for (GList *l = app_widgets; l != NULL; l = l->next) {
-      gtk_widget_set_size_request(GTK_WIDGET(l->data), config->grid_item_size, config->grid_item_size);
-      gtk_flow_box_append(GTK_FLOW_BOX(self->all_apps_grid), GTK_WIDGET(l->data));
+      GtkWidget *app_widget = GTK_WIDGET(l->data);
+      gtk_widget_set_size_request(app_widget, config->grid_item_size, config->grid_item_size);
+      hyprmenu_app_entry_set_grid_layout(HYPRMENU_APP_ENTRY(app_widget), TRUE);
+      hyprmenu_app_entry_set_icon_size(HYPRMENU_APP_ENTRY(app_widget), config->grid_item_size * 0.6);
+      gtk_flow_box_append(GTK_FLOW_BOX(self->all_apps_grid), app_widget);
       g_object_unref(GTK_WIDGET(l->data)); // Balance the ref from above
     }
     g_list_free(app_widgets);
