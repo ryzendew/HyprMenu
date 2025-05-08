@@ -64,7 +64,11 @@ on_focus_out (GtkWindow *window,
   
   // Close the window when it loses focus
   if (config->close_on_focus_out) {
-    gtk_window_close (window);
+    GtkApplication *app = GTK_APPLICATION(gtk_window_get_application(window));
+    gtk_window_close(window);
+    if (app) {
+      g_application_quit(G_APPLICATION(app));
+    }
   }
 }
 
@@ -92,7 +96,11 @@ on_key_press (GtkEventControllerKey *controller,
   // Close window on Super key press if configured
   if ((keyval == GDK_KEY_Super_L || keyval == GDK_KEY_Super_R) && 
       config->close_on_super_key) {
+    GtkApplication *app = GTK_APPLICATION(gtk_window_get_application(GTK_WINDOW(self)));
     gtk_window_close(GTK_WINDOW(self));
+    if (app) {
+      g_application_quit(G_APPLICATION(app));
+    }
     return TRUE;
   }
   
@@ -127,6 +135,9 @@ on_click_outside(GtkGestureClick *gesture,
                  double y,
                  gpointer user_data)
 {
+  (void)gesture;  // Silence unused parameter warning
+  (void)n_press;  // Silence unused parameter warning
+  
   // Only proceed if configured to close on click outside
   if (!config->close_on_click_outside) {
     return;
@@ -136,19 +147,29 @@ on_click_outside(GtkGestureClick *gesture,
   GtkWidget *widget = GTK_WIDGET(self);
   GtkWidget *main_box = self->main_box;
   
-  // Get the widget's allocation
-  GtkAllocation allocation;
-  gtk_widget_get_allocation(main_box, &allocation);
+  // Get the widget's bounds using the new API
+  graphene_rect_t bounds;
+  if (!gtk_widget_compute_bounds(main_box, widget, &bounds)) {
+    return;  // Failed to compute bounds
+  }
   
-  // Convert coordinates to widget space
-  double widget_x, widget_y;
-  gtk_widget_translate_coordinates(widget, main_box, x, y, &widget_x, &widget_y);
+  // Convert coordinates to widget space using the new API
+  graphene_point_t point = GRAPHENE_POINT_INIT(x, y);
+  graphene_point_t transformed;
+  if (!gtk_widget_compute_point(main_box, widget, &point, &transformed)) {
+    return;  // Failed to compute point
+  }
   
   // Check if the click is outside the main box
-  if (widget_x < 0 || widget_y < 0 || 
-      widget_x > allocation.width || 
-      widget_y > allocation.height) {
+  if (transformed.x < bounds.origin.x || 
+      transformed.y < bounds.origin.y || 
+      transformed.x > bounds.origin.x + bounds.size.width || 
+      transformed.y > bounds.origin.y + bounds.size.height) {
+    GtkApplication *app = GTK_APPLICATION(gtk_window_get_application(GTK_WINDOW(self)));
     gtk_window_close(GTK_WINDOW(self));
+    if (app) {
+      g_application_quit(G_APPLICATION(app));
+    }
   }
 }
 
