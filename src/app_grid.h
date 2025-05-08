@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gtk/gtk.h>
+#include "list_view.h"
 
 G_BEGIN_DECLS
 

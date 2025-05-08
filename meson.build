@@ -31,6 +31,7 @@ sources = [
   'src/app_entry.c',
   'src/recent_apps.c',
   'src/config.c',
+  'src/list_view.c',
 ]
 
 # Header files for installation
@@ -41,6 +42,7 @@ headers = [
   'src/app_entry.h',
   'src/recent_apps.h',
   'src/config.h',
+  'src/list_view.h',
 ]
 
 # Build configuration

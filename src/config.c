@@ -353,29 +353,23 @@ hyprmenu_config_apply_css()
   // Window styles with AGS effects
   g_string_append_printf(css, 
     ".hyprmenu-window {\n"
-    "  background-color: rgba(%s, %.2f);\n"
+    "  background-color: %s;\n"
     "  border-radius: %dpx;\n"
     "  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);\n",
-    config->background_color, config->background_opacity, 
+    config->background_color,
     config->corner_radius);
   
   // Add AGS-style blur effects if enabled
   if (config->blur_enabled) {
     g_string_append_printf(css,
-      "  backdrop-filter: blur(%dpx) brightness(%.1f) contrast(%.1f) saturate(%.1f);\n",
+      "  filter: blur(%dpx) brightness(%.1f) contrast(%.1f) saturate(%.1f);\n",
       config->blur_radius,
       config->blur_brightness,
       config->blur_contrast,
       config->blur_saturation);
     
-    if (config->blur_noise > 0) {
-      g_string_append_printf(css,
-        "  backdrop-filter: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\"><filter id=\"noise\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"%.2f\" numOctaves=\"3\" stitchTiles=\"stitch\"/></filter></svg>#noise');\n",
-        config->blur_noise);
-    }
-    
     if (config->blur_grayscale) {
-      g_string_append(css, "  backdrop-filter: grayscale(100%);\n");
+      g_string_append(css, "  filter: grayscale(100%);\n");
     }
   }
   
@@ -384,10 +378,6 @@ hyprmenu_config_apply_css()
     g_string_append_printf(css,
       "  background-color: rgba(%s, %.2f);\n",
       config->background_color, config->transparency_alpha);
-    
-    if (config->transparency_blur) {
-      g_string_append(css, "  backdrop-filter: blur(10px);\n");
-    }
     
     if (config->transparency_shadow) {
       g_string_append_printf(css,
@@ -411,25 +401,22 @@ hyprmenu_config_apply_css()
     "  padding: 8px;\n"
     "}\n");
   
-  // Search entry styles with AGS effects
+  // Search entry styles
   g_string_append_printf(css, 
     ".hyprmenu-search {\n"
-    "  background-color: rgba(%s, %.2f);\n"
+    "  background-color: %s;\n"
     "  border-radius: %dpx;\n"
     "  padding: %dpx 12px;\n"
     "  font-size: %dpx;\n"
     "  color: %s;\n"
     "  border: 1px solid rgba(255, 255, 255, 0.15);\n"
     "  margin: 8px 4px 12px 4px;\n"
-    "  width: 95%%;\n",
-    config->search_background_color, config->search_background_opacity,
-    config->search_corner_radius, config->search_padding,
-    config->search_font_size, config->search_text_color);
-  
-  if (config->blur_enabled) {
-    g_string_append(css,
-      "  backdrop-filter: blur(5px);\n");
-  }
+    "  min-width: 200px;\n",
+    config->search_background_color,
+    config->search_corner_radius,
+    config->search_padding,
+    config->search_font_size,
+    config->search_text_color);
   
   g_string_append(css,
     "}\n"
@@ -449,24 +436,20 @@ hyprmenu_config_apply_css()
     "  background-color: transparent;\n"
     "  padding: 4px;\n"
     "  margin: 0 auto;\n"
-    "  max-width: 680px;\n"
+    "  min-width: 200px;\n"
     "}\n");
   
-  // Category styles with AGS effects
+  // Category styles
   g_string_append_printf(css, 
     ".hyprmenu-category {\n"
-    "  background-color: rgba(%s, %.2f);\n"
+    "  background-color: %s;\n"
     "  border-radius: %dpx;\n"
     "  margin: 4px 0px;\n"
     "  padding: %dpx;\n"
     "  border: 1px solid rgba(255, 255, 255, 0.05);\n",
-    config->category_background_color, config->category_background_opacity,
-    config->category_corner_radius, config->category_padding);
-  
-  if (config->blur_enabled) {
-    g_string_append(css,
-      "  backdrop-filter: blur(3px);\n");
-  }
+    config->category_background_color,
+    config->category_corner_radius,
+    config->category_padding);
   
   g_string_append_printf(css,
     "}\n"
@@ -476,7 +459,8 @@ hyprmenu_config_apply_css()
     "  font-weight: bold;\n"
     "  padding: 6px 8px;\n"
     "  margin-bottom: 4px;\n",
-    config->category_text_color, config->category_font_size);
+    config->category_text_color,
+    config->category_font_size);
   
   // Add separator if configured
   if (config->category_show_separators) {
@@ -485,25 +469,21 @@ hyprmenu_config_apply_css()
   
   g_string_append(css, "}\n");
   
-  // App entry styles with AGS effects
+  // App entry styles
   g_string_append_printf(css, 
     ".hyprmenu-app-entry {\n"
-    "  background-color: rgba(%s, %.2f);\n"
+    "  background-color: %s;\n"
     "  border-radius: %dpx;\n"
     "  padding: %dpx 8px;\n"
     "  margin: 2px 4px;\n"
-    "  transition: all 0.2s ease;\n"
+    "  transition: all 200ms ease;\n"
     "  border: 1px solid rgba(255, 255, 255, 0.05);\n"
     "  min-height: 36px;\n",
-    config->app_entry_background_color, config->app_entry_background_opacity,
-    config->app_entry_corner_radius, config->app_entry_padding);
+    config->app_entry_background_color,
+    config->app_entry_corner_radius,
+    config->app_entry_padding);
   
-  if (config->blur_enabled) {
-    g_string_append(css,
-      "  backdrop-filter: blur(2px);\n");
-  }
-  
-  g_string_append_printf(css,
+  g_string_append(css,
     "}\n"
     ".hyprmenu-app-entry:hover {\n"
     "  background-color: rgba(100, 100, 100, 0.8);\n"
@@ -518,7 +498,7 @@ hyprmenu_config_apply_css()
     "  border-radius: 6px;\n"
     "  padding: 6px 8px;\n"
     "  margin: 2px 0px;\n"
-    "  transition: all 0.15s ease;\n"
+    "  transition: all 150ms ease;\n"
     "  border: 1px solid rgba(255, 255, 255, 0.05);\n"
     "}\n"
     ".hyprmenu-list-row:hover {\n"
@@ -533,8 +513,8 @@ hyprmenu_config_apply_css()
     "  background-color: rgba(50, 50, 60, 0.7);\n"
     "  border-radius: 8px;\n"
     "  border: 1px solid rgba(255, 255, 255, 0.08);\n"
-    "  width: 120px;\n"
-    "  height: 120px;\n"
+    "  min-width: 100px;\n"
+    "  min-height: 100px;\n"
     "}\n"
     ".grid-item:hover {\n"
     "  background-color: rgba(70, 70, 80, 0.8);\n"
@@ -543,8 +523,8 @@ hyprmenu_config_apply_css()
     ".hyprmenu-app-grid flowboxchild {\n"
     "  padding: 0;\n"
     "  margin: 0;\n"
-    "  min-width: 120px;\n"
-    "  min-height: 120px;\n"
+    "  min-width: 100px;\n"
+    "  min-height: 100px;\n"
     "}\n");
     
   // App name styles
@@ -555,7 +535,8 @@ hyprmenu_config_apply_css()
     "  font-weight: bold;\n"
     "  margin-bottom: 2px;\n"
     "}\n",
-    config->app_entry_text_color, config->app_entry_font_size);
+    config->app_entry_text_color,
+    config->app_entry_font_size);
     
   // App description styles
   g_string_append_printf(css,
@@ -566,7 +547,8 @@ hyprmenu_config_apply_css()
     "  padding: 2px 4px;\n"
     "  border-radius: 4px;\n"
     "}\n",
-    config->app_entry_text_color, config->app_entry_font_size - 2);
+    config->app_entry_text_color,
+    config->app_entry_font_size - 2);
   
   // Scrollbar styles
   g_string_append(css,
@@ -606,7 +588,7 @@ hyprmenu_config_apply_css()
     "  min-width: 24px;\n"
     "  min-height: 24px;\n"
     "  margin: 0 4px;\n"
-    "  transition: all 0.15s ease;\n"
+    "  transition: all 150ms ease;\n"
     "  color: rgba(255, 255, 255, 0.85);\n"
     "  outline: none;\n"
     "}\n"

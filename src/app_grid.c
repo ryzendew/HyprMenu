@@ -9,13 +9,14 @@ struct _HyprMenuAppGrid
 {
   GtkBox parent_instance;
   
-  GtkWidget *category_list;
+  GtkWidget *category_list;    // Grid view
+  GtkWidget *list_view;        // List view
   GtkWidget *scrolled_window;
-  GtkWidget *header_box;      // Header box for toggle button
-  GtkWidget *toggle_button;   // Toggle button for grid/list view
+  GtkWidget *header_box;       // Header box for toggle button
+  GtkWidget *toggle_button;    // Toggle button for grid/list view
+  GtkWidget *current_view;     // Points to either category_list or list_view
   
   GArray *app_entries;
-  
   char *filter_text;
   
   // Add event controller for key events
@@ -94,6 +95,12 @@ hyprmenu_app_grid_finalize (GObject *object)
   g_free (self->filter_text);
   
   if (self->app_entries) {
+    for (guint i = 0; i < self->app_entries->len; i++) {
+      HyprMenuAppEntry *entry = g_array_index(self->app_entries, HyprMenuAppEntry*, i);
+      if (entry) {
+        g_object_unref(entry);
+      }
+    }
     g_array_unref (self->app_entries);
   }
   
@@ -134,17 +141,23 @@ hyprmenu_app_grid_init (HyprMenuAppGrid *self)
   gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (self->scrolled_window),
                                  GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
   
-  /* Create category list */
-  self->category_list = GTK_WIDGET (hyprmenu_category_list_new ());
-  gtk_scrolled_window_set_child (GTK_SCROLLED_WINDOW (self->scrolled_window), 
-                                self->category_list);
+  /* Create both views */
+  self->category_list = GTK_WIDGET(hyprmenu_category_list_new());
+  self->list_view = hyprmenu_list_view_new();
   
-  /* Set initial view mode */
-  hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), 
-                                      config->use_grid_view);
+  /* Set initial view based on config */
+  if (config->use_grid_view) {
+    self->current_view = self->category_list;
+    hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), TRUE);
+  } else {
+    self->current_view = self->list_view;
+  }
+  
+  gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(self->scrolled_window), 
+                               self->current_view);
   
   /* Add scrolled window to self */
-  gtk_box_append (GTK_BOX (self), self->scrolled_window);
+  gtk_box_append(GTK_BOX(self), self->scrolled_window);
   
   // Add key controller for Super key
   self->key_controller = gtk_event_controller_key_new();
@@ -181,11 +194,15 @@ hyprmenu_app_grid_refresh (HyprMenuAppGrid *self)
     g_warning("hyprmenu_app_grid_refresh: NULL self pointer");
     return;
   }
-
-  /* Clear existing array and create a new one */
-  g_print("hyprmenu_app_grid_refresh: Clearing existing entries\n");
   
+  /* Clear existing entries */
   if (self->app_entries) {
+    for (guint i = 0; i < self->app_entries->len; i++) {
+      HyprMenuAppEntry *entry = g_array_index(self->app_entries, HyprMenuAppEntry*, i);
+      if (entry) {
+        g_object_unref(entry);
+      }
+    }
     g_array_unref(self->app_entries);
   }
   
@@ -193,294 +210,125 @@ hyprmenu_app_grid_refresh (HyprMenuAppGrid *self)
   self->app_entries = g_array_new(FALSE, FALSE, sizeof(HyprMenuAppEntry *));
   g_array_set_clear_func(self->app_entries, (GDestroyNotify)g_object_unref);
   
-  g_print("hyprmenu_app_grid_refresh: Created new app entries array\n");
+  /* Clear both views */
+  hyprmenu_category_list_clear(HYPRMENU_CATEGORY_LIST(self->category_list));
+  hyprmenu_list_view_clear(HYPRMENU_LIST_VIEW(self->list_view));
   
   /* Get all desktop apps */
-  g_print("hyprmenu_app_grid_refresh: Getting all applications\n");
   GList *all_apps = g_app_info_get_all();
-  int total_apps = g_list_length(all_apps);
-  g_print("hyprmenu_app_grid_refresh: Found %d applications total\n", total_apps);
-  
-  // Create a hash table to store apps by category
-  GHashTable *category_apps = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
-  
-  int valid_count = 0;
-  int desktop_app_count = 0;
-  int shown_app_count = 0;
   
   for (GList *l = all_apps; l != NULL; l = l->next) {
     GAppInfo *app_info = G_APP_INFO(l->data);
     
-    /* Skip if not a desktop app */
-    if (!G_IS_DESKTOP_APP_INFO(app_info)) {
+    if (!G_IS_DESKTOP_APP_INFO(app_info) || !g_app_info_should_show(app_info)) {
       continue;
     }
     
-    desktop_app_count++;
-    
-    /* Skip if shouldn't be shown */
-    if (!g_app_info_should_show(app_info)) {
-      continue;
-    }
-    
-    shown_app_count++;
-    
-    /* Validate app info */
     const char *app_name = g_app_info_get_name(app_info);
     const char *app_id = g_app_info_get_id(app_info);
     
-    g_print("Processing app: name=%s, id=%s\n", 
-            app_name ? app_name : "(null)", 
-            app_id ? app_id : "(null)");
-    
     if (!app_name || !app_id || app_name[0] == '\0' || app_id[0] == '\0') {
-      g_print("  Skipping app with invalid name or id\n");
       continue;
     }
     
-    /* Create app entry */
+    /* Create app entry for the array */
     HyprMenuAppEntry *entry = hyprmenu_app_entry_new(G_DESKTOP_APP_INFO(app_info));
+    if (!entry) continue;
     
-    /* Skip if entry creation failed */
-    if (!entry) {
-      g_print("  Entry creation failed for app: %s\n", app_name);
-      continue;
-    }
+    /* Add to both views */
+    gboolean category_added = hyprmenu_category_list_add_app(
+      HYPRMENU_CATEGORY_LIST(self->category_list), 
+      G_DESKTOP_APP_INFO(app_info)
+    );
     
-    /* Verify the entry was created properly */
-    const char *entry_name = hyprmenu_app_entry_get_app_name(entry);
-    if (!entry_name || entry_name[0] == '\0') {
-      g_print("  Created entry has invalid name\n");
+    gboolean list_added = hyprmenu_list_view_add_app(
+      HYPRMENU_LIST_VIEW(self->list_view), 
+      G_DESKTOP_APP_INFO(app_info)
+    );
+    
+    if (!category_added || !list_added) {
+      g_warning("Failed to add app to one or both views: %s", app_id);
       g_object_unref(entry);
       continue;
     }
     
-    /* Add to list */
+    /* Store in array */
     g_array_append_val(self->app_entries, entry);
-    valid_count++;
-    
-    /* Get category and add to category hash table */
-    const char *primary_category = "Other";
-    const char **categories = hyprmenu_app_entry_get_categories(entry);
-    
-    if (categories && categories[0] && categories[0][0]) {
-      primary_category = categories[0];
-    }
-    
-    g_print("  Added app '%s' to category '%s'\n", entry_name, primary_category);
-    
-    // Get or create the list for this category
-    GSList *category_list = g_hash_table_lookup(category_apps, primary_category);
-    category_list = g_slist_append(category_list, entry);
-    g_hash_table_insert(category_apps, g_strdup(primary_category), category_list);
   }
   
-  g_print("hyprmenu_app_grid_refresh: Stats:\n");
-  g_print("  Total apps: %d\n", total_apps);
-  g_print("  Desktop apps: %d\n", desktop_app_count);
-  g_print("  Should show apps: %d\n", shown_app_count);
-  g_print("  Valid apps added: %d\n", valid_count);
+  g_list_free(all_apps);
   
-  g_print("hyprmenu_app_grid_refresh: Added %d valid applications total\n", valid_count);
-  g_list_free_full(all_apps, g_object_unref);
-  
-  // Get all category names and sort them alphabetically
-  GList *category_names = g_hash_table_get_keys(category_apps);
-  category_names = g_list_sort(category_names, (GCompareFunc)g_ascii_strcasecmp);
-  
-  g_print("hyprmenu_app_grid_refresh: Found %d categories\n", g_list_length(category_names));
-  
-  // Add categories in sorted order
-  for (GList *l = category_names; l != NULL; l = l->next) {
-    const char *category_name = l->data;
-    GSList *apps = g_hash_table_lookup(category_apps, category_name);
-    int app_count = g_slist_length(apps);
-    
-    g_print("  Category '%s' has %d apps\n", category_name, app_count);
-    
-    // Sort apps within the category alphabetically
-    apps = g_slist_sort(apps, (GCompareFunc)hyprmenu_app_entry_compare_by_name);
-    
-    // Add each app to its category
-    for (GSList *app_item = apps; app_item != NULL; app_item = app_item->next) {
-      HyprMenuAppEntry *entry = HYPRMENU_APP_ENTRY(app_item->data);
-      if (entry) {
-        const char *app_name = hyprmenu_app_entry_get_app_name(entry);
-        g_print("    Adding app '%s' to category UI\n", app_name);
-        
-        hyprmenu_category_list_add_category(HYPRMENU_CATEGORY_LIST(self->category_list),
-                                          category_name,
-                                          GTK_WIDGET(entry));
-      }
-    }
-    
-    g_slist_free(apps);
+  /* Apply current filter if any */
+  if (self->filter_text) {
+    hyprmenu_app_grid_filter(self, self->filter_text);
   }
-  
-  g_list_free(category_names);
-  g_hash_table_destroy(category_apps);
-  
-  /* Update display with filter */
-  g_print("hyprmenu_app_grid_refresh: Refreshing display\n");
-  hyprmenu_app_grid_filter(self, self->filter_text);
-  g_print("hyprmenu_app_grid_refresh: Refresh complete\n");
-}
-
-static gboolean
-app_passes_filter(HyprMenuAppEntry *entry, const char *filter_text)
-{
-  // No filter means everything passes
-  if (!filter_text || !*filter_text) {
-    return TRUE;
-  }
-  
-  // Get the app name
-  const char *app_name = hyprmenu_app_entry_get_app_name(entry);
-  if (!app_name || !*app_name) {
-    return FALSE;
-  }
-  
-  // Do a simple case-insensitive substring search
-  char *name_lower = g_utf8_strdown(app_name, -1);
-  if (!name_lower) {
-    return FALSE;
-  }
-  
-  char *filter_lower = g_strdup(filter_text);
-  if (!filter_lower) {
-    g_free(name_lower);
-    return FALSE;
-  }
-  
-  char *lower_filter = g_utf8_strdown(filter_lower, -1);
-  g_free(filter_lower);
-  
-  if (!lower_filter) {
-    g_free(name_lower);
-    return FALSE;
-  }
-  
-  gboolean result = (strstr(name_lower, lower_filter) != NULL);
-  
-  g_free(name_lower);
-  g_free(lower_filter);
-  
-  return result;
 }
 
 void
 hyprmenu_app_grid_filter (HyprMenuAppGrid *self, const char *search_text)
 {
-  // Validate self pointer
-  if (!self) {
-    g_warning("hyprmenu_app_grid_filter: NULL self pointer");
-    return;
-  }
-
-  // Free previous filter text
-  if (self->filter_text) {
-    g_free(self->filter_text);
-    self->filter_text = NULL;
-  }
+  g_return_if_fail(HYPRMENU_IS_APP_GRID(self));
   
-  // Set new filter text if provided
-  if (search_text && *search_text) {
-    self->filter_text = g_strdup(search_text);
+  g_free(self->filter_text);
+  self->filter_text = g_strdup(search_text);
+  
+  /* Apply filter to both views */
+  gboolean category_filtered = hyprmenu_category_list_filter(
+    HYPRMENU_CATEGORY_LIST(self->category_list), 
+    search_text
+  );
+  
+  gboolean list_filtered = hyprmenu_list_view_filter(
+    HYPRMENU_LIST_VIEW(self->list_view), 
+    search_text
+  );
+  
+  if (!category_filtered || !list_filtered) {
+    g_warning("Failed to apply filter to one or both views");
   }
-  
-  // Only continue if we have app entries to filter
-  if (!self->app_entries || !self->app_entries->len) {
-    return;
-  }
-  
-  // Create a hash table to track which categories have visible items
-  GHashTable *category_entries = g_hash_table_new(g_str_hash, g_str_equal);
-  
-  // First pass: mark all entries as visible/hidden based on filter
-  for (guint i = 0; i < self->app_entries->len; i++) {
-    HyprMenuAppEntry *entry = g_array_index(self->app_entries, HyprMenuAppEntry *, i);
-    if (!entry) continue;
-    
-    gboolean visible = app_passes_filter(entry, self->filter_text);
-    gtk_widget_set_visible(GTK_WIDGET(entry), visible);
-    
-    // If entry is visible, mark its category as having visible items
-    if (visible) {
-      const char *primary_category = "Other";
-      const char **categories = hyprmenu_app_entry_get_categories(entry);
-      
-      if (categories && categories[0] && categories[0][0]) {
-        primary_category = categories[0];
-      }
-      
-      g_hash_table_insert(category_entries, (gpointer)primary_category, GINT_TO_POINTER(1));
-    }
-  }
-  
-  // Second pass: update category visibility
-  GtkWidget *category_list = self->category_list;
-  if (category_list) {
-    GtkWidget *child = gtk_widget_get_first_child(category_list);
-    while (child) {
-      const char *category_name = g_object_get_data(G_OBJECT(child), "category-name");
-      
-      if (category_name) {
-        gboolean has_visible_apps = g_hash_table_contains(category_entries, category_name);
-        gtk_widget_set_visible(child, has_visible_apps);
-      }
-      
-      child = gtk_widget_get_next_sibling(child);
-    }
-  }
-  
-  g_hash_table_destroy(category_entries);
 }
 
 void
 hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
 {
-  if (!self) return;
+  g_return_if_fail(HYPRMENU_IS_APP_GRID(self));
   
-  // Toggle the config setting
+  /* Update config */
   config->use_grid_view = !config->use_grid_view;
   
-  // Update button icon and tooltip
+  /* Update toggle button */
   gtk_button_set_icon_name(GTK_BUTTON(self->toggle_button),
-    config->use_grid_view ? "view-list-symbolic" : "view-grid-symbolic");
+                          config->use_grid_view ? "view-list-symbolic" : "view-grid-symbolic");
   gtk_widget_set_tooltip_text(self->toggle_button,
-    config->use_grid_view ? "Switch to List View" : "Switch to Grid View");
+                             config->use_grid_view ? "Switch to List View" : "Switch to Grid View");
   
-  // Always use 4 columns for grid view, regardless of config
+  /* Switch views */
+  GtkWidget *new_view;
   if (config->use_grid_view) {
-    config->grid_columns = 4;
-    
-    // Find and resize the window
-    GtkRoot *root = gtk_widget_get_root(GTK_WIDGET(self));
-    if (GTK_IS_WINDOW(root)) {
-      gtk_window_set_resizable(GTK_WINDOW(root), FALSE);
-      // Keep the 800x600 size
-      gtk_window_set_default_size(GTK_WINDOW(root), 800, 600);
-    }
+    new_view = self->category_list;
+    hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), TRUE);
   } else {
-    // Reset window size for list view
-    GtkRoot *root = gtk_widget_get_root(GTK_WIDGET(self));
-    if (GTK_IS_WINDOW(root)) {
-      gtk_window_set_resizable(GTK_WINDOW(root), TRUE);
-      // Keep the 800x600 size
-      gtk_window_set_default_size(GTK_WINDOW(root), 800, 600);
+    // Validate list view before switching
+    if (!hyprmenu_list_view_is_valid(HYPRMENU_LIST_VIEW(self->list_view))) {
+      g_warning("List view is not valid, falling back to grid view");
+      config->use_grid_view = TRUE;
+      new_view = self->category_list;
+      hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), TRUE);
+    } else {
+      new_view = self->list_view;
     }
   }
   
-  // Update the category list view mode
-  hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), 
-                                      config->use_grid_view);
+  if (new_view != self->current_view) {
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(self->scrolled_window), new_view);
+    self->current_view = new_view;
+    
+    /* Apply current filter to new view */
+    if (self->filter_text) {
+      hyprmenu_app_grid_filter(self, self->filter_text);
+    }
+  }
   
-  // Clear existing view and refresh
-  hyprmenu_category_list_clear(HYPRMENU_CATEGORY_LIST(self->category_list));
-  
-  // Refresh the grid with new layout
-  hyprmenu_app_grid_refresh(self);
-  
-  // Save config
+  /* Save config changes */
   hyprmenu_config_save();
 } 

@@ -58,12 +58,13 @@ hyprmenu_app_entry_dispose (GObject *object)
 {
   HyprMenuAppEntry *self = HYPRMENU_APP_ENTRY (object);
 
-  // Unparent main_box if it exists
+  // First remove all children from main_box
   if (self->main_box) {
-    // First remove all children from main_box
-    GtkWidget *child;
-    while ((child = gtk_widget_get_first_child(self->main_box))) {
+    GtkWidget *child = gtk_widget_get_first_child(self->main_box);
+    while (child) {
+      GtkWidget *next = gtk_widget_get_next_sibling(child);
       gtk_widget_unparent(child);
+      child = next;
     }
     // Then unparent main_box itself
     gtk_widget_unparent(self->main_box);

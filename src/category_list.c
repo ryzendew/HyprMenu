@@ -1,6 +1,7 @@
 #include "category_list.h"
 #include "config.h"
 #include "app_entry.h"
+#include <string.h>
 
 static void
 on_list_row_clicked(GtkGestureClick *gesture,
@@ -140,23 +141,29 @@ hyprmenu_category_list_clear (HyprMenuCategoryList *self)
   
   // First, clear all widgets from the grid view if it exists
   if (self->all_apps_grid) {
-    GtkWidget *child;
-    while ((child = gtk_widget_get_first_child(self->all_apps_grid))) {
+    GtkWidget *child = gtk_widget_get_first_child(self->all_apps_grid);
+    while (child) {
+      GtkWidget *next = gtk_widget_get_next_sibling(child);
       gtk_widget_unparent(child);
+      child = next;
     }
   }
   
   // Clear all widgets from the main box
   if (self->main_box) {
-    GtkWidget *category_box;
-    while ((category_box = gtk_widget_get_first_child(self->main_box))) {
+    GtkWidget *category_box = gtk_widget_get_first_child(self->main_box);
+    while (category_box) {
+      GtkWidget *next_category = gtk_widget_get_next_sibling(category_box);
       // For each category box, first clear its children
-      GtkWidget *child;
-      while ((child = gtk_widget_get_first_child(category_box))) {
+      GtkWidget *child = gtk_widget_get_first_child(category_box);
+      while (child) {
+        GtkWidget *next = gtk_widget_get_next_sibling(child);
         gtk_widget_unparent(child);
+        child = next;
       }
       // Then remove the category box itself
       gtk_widget_unparent(category_box);
+      category_box = next_category;
     }
   }
   
@@ -409,4 +416,69 @@ hyprmenu_category_list_set_grid_view (HyprMenuCategoryList *self, gboolean use_g
     gtk_widget_set_visible(self->all_apps_grid, FALSE);
     gtk_widget_set_visible(self->main_box, TRUE);
   }
+}
+
+gboolean
+hyprmenu_category_list_add_app (HyprMenuCategoryList *self,
+                               GDesktopAppInfo *app_info)
+{
+  g_return_val_if_fail(HYPRMENU_IS_CATEGORY_LIST(self), FALSE);
+  g_return_val_if_fail(G_IS_DESKTOP_APP_INFO(app_info), FALSE);
+  
+  HyprMenuAppEntry *entry = hyprmenu_app_entry_new(app_info);
+  if (!entry) return FALSE;
+  
+  const char **categories = hyprmenu_app_entry_get_categories(entry);
+  const char *category = categories && categories[0] ? categories[0] : "Other";
+  
+  hyprmenu_category_list_add_category(self, category, GTK_WIDGET(entry));
+  return TRUE;
+}
+
+gboolean
+hyprmenu_category_list_filter (HyprMenuCategoryList *self,
+                             const char *search_text)
+{
+  g_return_val_if_fail(HYPRMENU_IS_CATEGORY_LIST(self), FALSE);
+  
+  GHashTableIter iter;
+  gpointer key, value;
+  
+  g_hash_table_iter_init(&iter, self->category_boxes);
+  while (g_hash_table_iter_next(&iter, &key, &value)) {
+    GtkWidget *category_box = GTK_WIDGET(value);
+    GtkWidget *content = gtk_widget_get_last_child(category_box);
+    gboolean has_visible_items = FALSE;
+    
+    if (GTK_IS_FLOW_BOX(content) || GTK_IS_LIST_BOX(content)) {
+      GtkWidget *child = gtk_widget_get_first_child(content);
+      while (child) {
+        GtkWidget *next = gtk_widget_get_next_sibling(child);
+        if (GTK_IS_FLOW_BOX_CHILD(child) || GTK_IS_LIST_BOX_ROW(child)) {
+          GtkWidget *app = gtk_widget_get_first_child(child);
+          if (HYPRMENU_IS_APP_ENTRY(app)) {
+            gboolean visible = TRUE;
+            if (search_text && *search_text) {
+              const char *app_name = hyprmenu_app_entry_get_app_name(HYPRMENU_APP_ENTRY(app));
+              char *name_lower = g_utf8_strdown(app_name, -1);
+              char *search_lower = g_utf8_strdown(search_text, -1);
+              
+              visible = (strstr(name_lower, search_lower) != NULL);
+              
+              g_free(name_lower);
+              g_free(search_lower);
+            }
+            
+            gtk_widget_set_visible(child, visible);
+            if (visible) has_visible_items = TRUE;
+          }
+        }
+        child = next;
+      }
+    }
+    
+    gtk_widget_set_visible(category_box, has_visible_items);
+  }
+  
+  return TRUE;
 } 

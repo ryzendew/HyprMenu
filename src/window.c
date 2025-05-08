@@ -3,6 +3,7 @@
 #include <gtk4-layer-shell.h>
 #include <gdk/gdkkeysyms.h>
 #include <gdk/gdk.h>
+#include <gdk/wayland/gdkwayland.h>
 #include "app_grid.h"
 #include "recent_apps.h"
 
@@ -289,18 +290,28 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_window_set_default_size(GTK_WINDOW(self), 800, 600);
   
   /* Initialize layer shell */
+  GdkDisplay *display = gtk_widget_get_display(GTK_WIDGET(self));
+  if (!GDK_IS_WAYLAND_DISPLAY(display)) {
+    g_error("HyprMenu requires Wayland");
+    return;
+  }
+
   if (!gtk_layer_is_supported()) {
-    g_error("GTK Layer Shell is required but not supported on this compositor");
+    g_error("GTK Layer Shell is required but not supported");
     return;
   }
   
-  g_print("Using GTK Layer Shell\n");
+  g_message("Initializing GTK Layer Shell for window");
   gtk_layer_init_for_window(GTK_WINDOW(self));
+  
+  g_message("Setting layer shell properties");
   gtk_layer_set_layer(GTK_WINDOW(self), GTK_LAYER_SHELL_LAYER_TOP);
   gtk_layer_set_keyboard_mode(GTK_WINDOW(self), GTK_LAYER_SHELL_KEYBOARD_MODE_EXCLUSIVE);
   gtk_layer_set_exclusive_zone(GTK_WINDOW(self), -1);
   
   /* Position window based on menu_position config */
+  g_message("Setting window position to: %d", config->menu_position);
+  
   switch (config->menu_position) {
     case POSITION_TOP_LEFT:
       gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
@@ -482,6 +493,23 @@ hyprmenu_window_dispose(GObject *object)
     gtk_widget_remove_controller(GTK_WIDGET(self), GTK_EVENT_CONTROLLER(self->click_gesture));
     self->click_gesture = NULL;
   }
+  
+  // Properly unparent child widgets
+  if (self->main_box) {
+    GtkWidget *child = gtk_widget_get_first_child(self->main_box);
+    while (child) {
+      GtkWidget *next = gtk_widget_get_next_sibling(child);
+      gtk_widget_unparent(child);
+      child = next;
+    }
+    gtk_widget_unparent(self->main_box);
+    self->main_box = NULL;
+  }
+  
+  // Clear references to child widgets
+  self->app_grid = NULL;
+  self->search_entry = NULL;
+  self->system_buttons_box = NULL;
   
   // Chain up
   G_OBJECT_CLASS(hyprmenu_window_parent_class)->dispose(object);

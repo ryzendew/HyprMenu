@@ -1,6 +1,7 @@
 #pragma once
 
 #include <gtk/gtk.h>
+#include <gio/gdesktopappinfo.h>
 
 G_BEGIN_DECLS
 
@@ -12,5 +13,9 @@ void hyprmenu_category_list_add_category (HyprMenuCategoryList *self, const char
 GtkWidget* hyprmenu_category_list_get_category_content (HyprMenuCategoryList *self, const char *category_name);
 void hyprmenu_category_list_clear (HyprMenuCategoryList *self);
 void hyprmenu_category_list_set_grid_view (HyprMenuCategoryList *self, gboolean use_grid_view);
+
+/* New functions */
+gboolean hyprmenu_category_list_add_app (HyprMenuCategoryList *self, GDesktopAppInfo *app_info);
+gboolean hyprmenu_category_list_filter (HyprMenuCategoryList *self, const char *search_text);
 
 G_END_DECLS 
