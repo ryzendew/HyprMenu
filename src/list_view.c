@@ -210,18 +210,34 @@ create_app_entry(HyprMenuListView* self, GDesktopAppInfo* app_info)
     // Create label box
     entry->label_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
     gtk_widget_set_hexpand(entry->label_box, TRUE);
+    gtk_widget_set_valign(entry->label_box, GTK_ALIGN_CENTER);
     gtk_widget_set_margin_start(entry->label_box, config->app_entry_padding);
     gtk_widget_set_margin_end(entry->label_box, config->app_entry_padding);
     
-    // Create name label
-    entry->name_label = gtk_label_new(entry->name);
+    // Calculate scaling for font sizes
+    double scale = (double)config->list_item_size / 48.0;
+    int name_font_size = (int)(config->app_entry_font_size * scale);
+    int desc_font_size = (int)((config->app_entry_font_size - 2) * scale);
+    if (desc_font_size < 8) desc_font_size = 8;
+    if (name_font_size < 8) name_font_size = 8;
+    
+    // Create name label with scaled font size
+    char *name_markup = g_markup_printf_escaped("<span weight='bold' size='%d'>%s</span>", name_font_size * PANGO_SCALE, entry->name);
+    entry->name_label = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(entry->name_label), name_markup);
+    g_free(name_markup);
     gtk_label_set_xalign(GTK_LABEL(entry->name_label), 0);
+    gtk_widget_set_valign(entry->name_label, GTK_ALIGN_CENTER);
     gtk_widget_add_css_class(entry->name_label, "app-name");
     
-    // Create description label if needed
+    // Create description label if needed, with scaled font size and centered vertically
     if (self->show_descriptions && entry->description) {
-        entry->desc_label = gtk_label_new(entry->description);
+        char *desc_markup = g_markup_printf_escaped("<span size='%d'>%s</span>", desc_font_size * PANGO_SCALE, entry->description);
+        entry->desc_label = gtk_label_new(NULL);
+        gtk_label_set_markup(GTK_LABEL(entry->desc_label), desc_markup);
+        g_free(desc_markup);
         gtk_label_set_xalign(GTK_LABEL(entry->desc_label), 0);
+        gtk_widget_set_valign(entry->desc_label, GTK_ALIGN_CENTER);
         gtk_label_set_wrap(GTK_LABEL(entry->desc_label), TRUE);
         gtk_widget_add_css_class(entry->desc_label, "app-description");
     }
