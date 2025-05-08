@@ -80,7 +80,7 @@ set_defaults(HyprMenuConfig *config)
   // Window style
   config->background_opacity = 0.85;
   config->background_blur = 5.0;
-  config->background_color = g_strdup("#1e1e1e");
+  config->background_color = g_strdup("");
   config->corner_radius = 12;
   config->border_width = 5;
   config->border_color = g_strdup("#444444");
@@ -227,6 +227,7 @@ gboolean
 hyprmenu_config_load()
 {
   g_autoptr(GKeyFile) keyfile = g_key_file_new();
+  gboolean missing_option = FALSE;
   
   // Load keyfile
   if (!g_key_file_load_from_file(keyfile, config->config_file, G_KEY_FILE_NONE, NULL)) {
@@ -236,6 +237,14 @@ hyprmenu_config_load()
   
   // Window layout
   if (g_key_file_has_group(keyfile, "Layout")) {
+    if (!g_key_file_has_key(keyfile, "Layout", "window_width", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Layout", "window_height", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Layout", "top_margin", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Layout", "left_margin", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Layout", "center_window", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Layout", "menu_position", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Layout", "bottom_offset", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Layout", "top_offset", NULL)) missing_option = TRUE;
     config->window_width = g_key_file_get_integer(keyfile, "Layout", "window_width", NULL);
     config->window_height = g_key_file_get_integer(keyfile, "Layout", "window_height", NULL);
     config->top_margin = g_key_file_get_integer(keyfile, "Layout", "top_margin", NULL);
@@ -256,6 +265,26 @@ hyprmenu_config_load()
   
   // Window style
   if (g_key_file_has_group(keyfile, "Style")) {
+    if (!g_key_file_has_key(keyfile, "Style", "background_opacity", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "background_blur", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "background_color", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "corner_radius", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "border_width", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "border_color", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "border_corner_radius", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "blur_enabled", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "blur_radius", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "blur_brightness", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "blur_contrast", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "blur_saturation", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "blur_noise", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "blur_grayscale", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "transparency_enabled", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "transparency_alpha", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "transparency_blur", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "transparency_shadow", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "transparency_shadow_color", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Style", "transparency_shadow_radius", NULL)) missing_option = TRUE;
     config->background_opacity = g_key_file_get_double(keyfile, "Style", "background_opacity", NULL);
     config->background_blur = g_key_file_get_double(keyfile, "Style", "background_blur", NULL);
     g_free(config->background_color);
@@ -304,6 +333,11 @@ hyprmenu_config_load()
   
   // Behavior section
   if (g_key_file_has_group(keyfile, "Behavior")) {
+    if (!g_key_file_has_key(keyfile, "Behavior", "close_on_click_outside", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Behavior", "close_on_super_key", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Behavior", "close_on_app_launch", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Behavior", "focus_search_on_open", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Behavior", "max_recent_apps", NULL)) missing_option = TRUE;
     config->close_on_click_outside = g_key_file_get_boolean(keyfile, "Behavior", "close_on_click_outside", NULL);
     config->close_on_super_key = g_key_file_get_boolean(keyfile, "Behavior", "close_on_super_key", NULL);
     config->close_on_app_launch = g_key_file_get_boolean(keyfile, "Behavior", "close_on_app_launch", NULL);
@@ -313,9 +347,18 @@ hyprmenu_config_load()
   
   // View section
   if (g_key_file_has_group(keyfile, "View")) {
+    if (!g_key_file_has_key(keyfile, "View", "use_grid_view", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "View", "grid_columns", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "View", "grid_item_size", NULL)) missing_option = TRUE;
     config->use_grid_view = g_key_file_get_boolean(keyfile, "View", "use_grid_view", NULL);
     config->grid_columns = g_key_file_get_integer(keyfile, "View", "grid_columns", NULL);
     config->grid_item_size = g_key_file_get_integer(keyfile, "View", "grid_item_size", NULL);
+  }
+  
+  // If any option is missing, regenerate the config file
+  if (missing_option) {
+    g_message("Missing config option(s) detected. Regenerating config file with all options.");
+    hyprmenu_config_save();
   }
   
   return TRUE;
