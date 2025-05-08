@@ -4,6 +4,7 @@
 #include <gtk4-layer-shell.h>
 #include <gdk/gdkkeysyms.h>
 #include <gdk/gdk.h>
+#include "config.h"  // For position enum
 
 G_BEGIN_DECLS
 

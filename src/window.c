@@ -288,36 +288,76 @@ hyprmenu_window_init (HyprMenuWindow *self)
   /* Set default size - will be adjusted by app grid based on view mode */
   gtk_window_set_default_size(GTK_WINDOW(self), 800, 600);
   
-  /* Try to use layer shell */
-  gboolean layer_shell_success = FALSE;
+  /* Initialize layer shell */
+  if (!gtk_layer_is_supported()) {
+    g_error("GTK Layer Shell is required but not supported on this compositor");
+    return;
+  }
   
-  /* Set up layer shell if available */
-  layer_shell_success = gtk_layer_is_supported();
+  g_print("Using GTK Layer Shell\n");
+  gtk_layer_init_for_window(GTK_WINDOW(self));
+  gtk_layer_set_layer(GTK_WINDOW(self), GTK_LAYER_SHELL_LAYER_TOP);
+  gtk_layer_set_keyboard_mode(GTK_WINDOW(self), GTK_LAYER_SHELL_KEYBOARD_MODE_EXCLUSIVE);
+  gtk_layer_set_exclusive_zone(GTK_WINDOW(self), -1);
   
-  if (layer_shell_success) {
-    g_print("Using GTK Layer Shell\n");
-    gtk_layer_init_for_window (GTK_WINDOW (self));
-    gtk_layer_set_layer (GTK_WINDOW (self), GTK_LAYER_SHELL_LAYER_TOP);
-    gtk_layer_set_keyboard_mode (GTK_WINDOW (self), GTK_LAYER_SHELL_KEYBOARD_MODE_EXCLUSIVE);
-    gtk_layer_set_exclusive_zone (GTK_WINDOW (self), -1);
+  /* Position window based on menu_position config */
+  switch (config->menu_position) {
+    case POSITION_TOP_LEFT:
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, TRUE);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, config->top_margin);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, config->left_margin);
+      break;
     
-    /* Position window based on config */
-    if (config->center_window) {
-      /* Center the window */
-      gtk_layer_set_anchor (GTK_WINDOW (self), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
-      gtk_layer_set_anchor (GTK_WINDOW (self), GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
-      gtk_layer_set_anchor (GTK_WINDOW (self), GTK_LAYER_SHELL_EDGE_TOP, TRUE);
-      gtk_layer_set_anchor (GTK_WINDOW (self), GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
-    } else {
-      /* Position at top-left with margins */
-      gtk_layer_set_anchor (GTK_WINDOW (self), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
-      gtk_layer_set_anchor (GTK_WINDOW (self), GTK_LAYER_SHELL_EDGE_TOP, TRUE);
-      gtk_layer_set_margin (GTK_WINDOW (self), GTK_LAYER_SHELL_EDGE_TOP, config->top_margin);
-      gtk_layer_set_margin (GTK_WINDOW (self), GTK_LAYER_SHELL_EDGE_LEFT, config->left_margin);
-    }
-  } else {
-    /* Fallback for X11 or when layer shell is not available */
-    g_print("Layer shell not available, using standard window mode\n");
+    case POSITION_TOP_CENTER:
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, TRUE);
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, config->top_margin);
+      break;
+    
+    case POSITION_TOP_RIGHT:
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, TRUE);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, config->top_margin);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, config->left_margin);
+      break;
+    
+    case POSITION_BOTTOM_LEFT:
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_BOTTOM, config->top_margin);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, config->left_margin);
+      break;
+    
+    case POSITION_BOTTOM_CENTER:
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_BOTTOM, config->top_margin);
+      break;
+    
+    case POSITION_BOTTOM_RIGHT:
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_BOTTOM, config->top_margin);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, config->left_margin);
+      break;
+    
+    case POSITION_CENTER:
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, TRUE);
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, TRUE);
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_BOTTOM, TRUE);
+      break;
+    
+    default:
+      // Default to top-left
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, TRUE);
+      gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, TRUE);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, config->top_margin);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, config->left_margin);
+      break;
   }
   
   /* Add CSS classes for styling */

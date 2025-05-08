@@ -27,6 +27,9 @@ on_shutdown(GApplication *app, gpointer user_data)
 int
 main (int argc, char *argv[])
 {
+  /* Force Wayland backend */
+  gdk_set_allowed_backends("wayland");
+  
   /* Initialize GTK */
   gtk_init();
   

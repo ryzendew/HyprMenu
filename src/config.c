@@ -5,6 +5,62 @@
 // Global config instance
 HyprMenuConfig *config = NULL;
 
+// Position mapping
+static const char* position_names[] = {
+  "top-left",
+  "top-center",
+  "top-right",
+  "bottom-left",
+  "bottom-center",
+  "bottom-right",
+  "center"
+};
+
+// Position utility functions
+const gchar* 
+hyprmenu_position_to_string(HyprMenuPosition position)
+{
+  switch (position) {
+    case POSITION_TOP_LEFT:
+      return "top-left";
+    case POSITION_TOP_CENTER:
+      return "top-center";
+    case POSITION_TOP_RIGHT:
+      return "top-right";
+    case POSITION_BOTTOM_LEFT:
+      return "bottom-left";
+    case POSITION_BOTTOM_CENTER:
+      return "bottom-center";
+    case POSITION_BOTTOM_RIGHT:
+      return "bottom-right";
+    case POSITION_CENTER:
+      return "center";
+    default:
+      return "top-left";
+  }
+}
+
+HyprMenuPosition 
+hyprmenu_position_from_string(const gchar *position_str)
+{
+  if (!position_str) return POSITION_TOP_LEFT;
+  
+  if (g_strcmp0(position_str, "top-center") == 0)
+    return POSITION_TOP_CENTER;
+  else if (g_strcmp0(position_str, "top-right") == 0)
+    return POSITION_TOP_RIGHT;
+  else if (g_strcmp0(position_str, "bottom-left") == 0)
+    return POSITION_BOTTOM_LEFT;
+  else if (g_strcmp0(position_str, "bottom-center") == 0)
+    return POSITION_BOTTOM_CENTER;
+  else if (g_strcmp0(position_str, "bottom-right") == 0)
+    return POSITION_BOTTOM_RIGHT;
+  else if (g_strcmp0(position_str, "center") == 0)
+    return POSITION_CENTER;
+  else
+    return POSITION_TOP_LEFT;
+}
+
 // Default configuration
 static void
 set_defaults(HyprMenuConfig *config)
@@ -15,6 +71,7 @@ set_defaults(HyprMenuConfig *config)
   config->top_margin = 48;
   config->left_margin = 8;
   config->center_window = FALSE;
+  config->menu_position = POSITION_TOP_LEFT; // Default position is top-left
   
   // Window style
   config->background_opacity = 0.85;
@@ -160,6 +217,13 @@ hyprmenu_config_load()
     config->top_margin = g_key_file_get_integer(keyfile, "Layout", "top_margin", NULL);
     config->left_margin = g_key_file_get_integer(keyfile, "Layout", "left_margin", NULL);
     config->center_window = g_key_file_get_boolean(keyfile, "Layout", "center_window", NULL);
+    
+    // Load position setting
+    char *position_str = g_key_file_get_string(keyfile, "Layout", "menu_position", NULL);
+    if (position_str) {
+      config->menu_position = hyprmenu_position_from_string(position_str);
+      g_free(position_str);
+    }
   }
   
   // Window style
@@ -222,6 +286,10 @@ hyprmenu_config_save()
   g_key_file_set_integer(keyfile, "Layout", "top_margin", config->top_margin);
   g_key_file_set_integer(keyfile, "Layout", "left_margin", config->left_margin);
   g_key_file_set_boolean(keyfile, "Layout", "center_window", config->center_window);
+  
+  // Save position setting
+  g_key_file_set_string(keyfile, "Layout", "menu_position", 
+                       hyprmenu_position_to_string(config->menu_position));
   
   // Window style
   g_key_file_set_double(keyfile, "Style", "background_opacity", config->background_opacity);

@@ -3,6 +3,17 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 
+/* Menu position enum */
+typedef enum {
+  POSITION_TOP_LEFT = 0,
+  POSITION_TOP_CENTER,
+  POSITION_TOP_RIGHT,
+  POSITION_BOTTOM_LEFT,
+  POSITION_BOTTOM_CENTER,
+  POSITION_BOTTOM_RIGHT,
+  POSITION_CENTER
+} HyprMenuPosition;
+
 typedef struct _HyprMenuConfig {
   // Window layout
   int window_width;
@@ -10,6 +21,7 @@ typedef struct _HyprMenuConfig {
   int top_margin;
   int left_margin;
   gboolean center_window;
+  HyprMenuPosition menu_position; // Position of the menu
   
   // Window style
   double background_opacity;
@@ -111,4 +123,8 @@ gboolean hyprmenu_config_init();
 void hyprmenu_config_free();
 gboolean hyprmenu_config_load();
 gboolean hyprmenu_config_save();
-void hyprmenu_config_apply_css(); 
+void hyprmenu_config_apply_css();
+
+// Position utility functions
+const gchar* hyprmenu_position_to_string(HyprMenuPosition position);
+HyprMenuPosition hyprmenu_position_from_string(const gchar *position_str); 

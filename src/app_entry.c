@@ -54,11 +54,35 @@ on_clicked(GtkGestureClick *gesture,
 }
 
 static void
+hyprmenu_app_entry_dispose (GObject *object)
+{
+  HyprMenuAppEntry *self = HYPRMENU_APP_ENTRY (object);
+
+  // Unparent main_box if it exists
+  if (self->main_box) {
+    // First remove all children from main_box
+    GtkWidget *child;
+    while ((child = gtk_widget_get_first_child(self->main_box))) {
+      gtk_widget_unparent(child);
+    }
+    // Then unparent main_box itself
+    gtk_widget_unparent(self->main_box);
+    self->main_box = NULL;
+  }
+
+  // Clear references to child widgets since they're owned by main_box
+  self->icon = NULL;
+  self->name_label = NULL;
+
+  G_OBJECT_CLASS (hyprmenu_app_entry_parent_class)->dispose (object);
+}
+
+static void
 hyprmenu_app_entry_finalize (GObject *object)
 {
   HyprMenuAppEntry *self = HYPRMENU_APP_ENTRY (object);
   
-  g_object_unref (self->app_info);
+  g_clear_object (&self->app_info);
   g_free (self->app_id);
   g_free (self->app_name);
   g_strfreev (self->categories);
@@ -224,6 +248,7 @@ hyprmenu_app_entry_class_init (HyprMenuAppEntryClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   
+  object_class->dispose = hyprmenu_app_entry_dispose;
   object_class->finalize = hyprmenu_app_entry_finalize;
 }
 
@@ -340,7 +365,11 @@ hyprmenu_app_entry_set_grid_layout (HyprMenuAppEntry *self, gboolean is_grid)
   
   /* Clear old children */
   if (self->main_box) {
+    // Unparent will handle destroying the widget and its children
     gtk_widget_unparent(self->main_box);
+    self->main_box = NULL;
+    self->icon = NULL;
+    self->name_label = NULL;
   }
   
   /* Create appropriate layout */
@@ -351,7 +380,9 @@ hyprmenu_app_entry_set_grid_layout (HyprMenuAppEntry *self, gboolean is_grid)
   }
   
   /* Set parent */
-  gtk_widget_set_parent(self->main_box, GTK_WIDGET(self));
+  if (self->main_box) {
+    gtk_widget_set_parent(self->main_box, GTK_WIDGET(self));
+  }
 }
 
 GDesktopAppInfo*
