@@ -31,7 +31,7 @@ A modern application launcher for Hyprland, built with GTK4 and GTK Layer Shell.
 ## Building
 
 ```bash
-./build.sh
+sudo ./build.sh --install
 ```
 
 ## Installation
