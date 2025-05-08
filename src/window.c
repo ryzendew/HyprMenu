@@ -501,8 +501,8 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_window_set_decorated (GTK_WINDOW (self), FALSE);
   gtk_window_set_resizable (GTK_WINDOW (self), TRUE);  // Allow resizing for proper grid view
   
-  /* Set default size - will be adjusted by app grid based on view mode */
-  gtk_window_set_default_size(GTK_WINDOW(self), 800, 600);
+  /* Set window size from configuration */
+  gtk_window_set_default_size(GTK_WINDOW(self), config->window_width, config->window_height);
   
   /* Initialize layer shell */
   GdkDisplay *display = gtk_widget_get_display(GTK_WIDGET(self));
