@@ -74,18 +74,20 @@ set_defaults(HyprMenuConfig *config)
   config->left_margin = 8;
   config->center_window = FALSE;
   config->menu_position = POSITION_TOP_LEFT; // Default position is top-left
+  config->bottom_offset = 55;
+  config->top_offset = 48;
   
   // Window style
   config->background_opacity = 0.85;
   config->background_blur = 5.0;
   config->background_color = g_strdup("#1e1e1e");
   config->corner_radius = 12;
-  config->border_width = 1;
-  config->border_color = g_strdup("rgba(255, 255, 255, 0.1)");
+  config->border_width = 5;
+  config->border_color = g_strdup("rgba(31, 0, 88, 0.1)");
   
   // AGS-style effects
   config->blur_enabled = TRUE;
-  config->blur_radius = 5;
+  config->blur_radius = 0;
   config->blur_brightness = 1.0;
   config->blur_contrast = 1.0;
   config->blur_saturation = 1.0;
@@ -226,6 +228,10 @@ hyprmenu_config_load()
       config->menu_position = hyprmenu_position_from_string(position_str);
       g_free(position_str);
     }
+    
+    // Load offsets
+    config->bottom_offset = g_key_file_get_integer(keyfile, "Layout", "bottom_offset", NULL);
+    config->top_offset = g_key_file_get_integer(keyfile, "Layout", "top_offset", NULL);
   }
   
   // Window style
@@ -354,6 +360,8 @@ hyprmenu_config_save_with_error(GError **error)
   g_key_file_set_integer(keyfile, "Layout", "top_margin", config->top_margin);
   g_key_file_set_integer(keyfile, "Layout", "left_margin", config->left_margin);
   g_key_file_set_boolean(keyfile, "Layout", "center_window", config->center_window);
+  g_key_file_set_integer(keyfile, "Layout", "bottom_offset", config->bottom_offset);
+  g_key_file_set_integer(keyfile, "Layout", "top_offset", config->top_offset);
   
   // Save position setting
   g_key_file_set_string(keyfile, "Layout", "menu_position", 

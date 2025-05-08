@@ -22,6 +22,8 @@ typedef struct _HyprMenuConfig {
   int left_margin;
   gboolean center_window;
   HyprMenuPosition menu_position; // Position of the menu
+  int bottom_offset; // Offset from bottom for dock/panel
+  int top_offset;    // Offset from top for panel
   
   // Window style
   double background_opacity;
