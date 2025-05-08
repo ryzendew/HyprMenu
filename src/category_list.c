@@ -55,6 +55,7 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   gtk_widget_add_css_class (self->main_box, "hyprmenu-category-list");
   gtk_widget_set_hexpand (self->main_box, TRUE);
   gtk_widget_set_vexpand (self->main_box, TRUE);
+  gtk_widget_set_halign (self->main_box, GTK_ALIGN_CENTER);
   
   /* Add main box to self */
   gtk_widget_set_parent (self->main_box, GTK_WIDGET (self));
@@ -62,7 +63,7 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   /* Create flow box for grid view */
   self->all_apps_grid = gtk_flow_box_new();
   gtk_flow_box_set_selection_mode(GTK_FLOW_BOX(self->all_apps_grid), GTK_SELECTION_NONE);
-  gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), 7);
+  gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), 4);
   
   /* Force items to their native size rather than trying to make them homogeneous */
   gtk_flow_box_set_homogeneous(GTK_FLOW_BOX(self->all_apps_grid), FALSE);
@@ -74,6 +75,7 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   
   gtk_widget_add_css_class(self->all_apps_grid, "hyprmenu-app-grid");
   gtk_widget_set_visible(self->all_apps_grid, FALSE);  // Hide by default (list view is default)
+  gtk_widget_set_halign(self->all_apps_grid, GTK_ALIGN_CENTER);
   gtk_widget_set_margin_start(self->all_apps_grid, 12);
   gtk_widget_set_margin_end(self->all_apps_grid, 12);
   gtk_widget_set_margin_top(self->all_apps_grid, 12);
@@ -246,8 +248,13 @@ hyprmenu_category_list_set_grid_view (HyprMenuCategoryList *self, gboolean use_g
   
   /* Update the flow box column count (in case config changed) */
   if (use_grid_view) {
-    // Use 7 columns in grid view to better use the 800x600 space
-    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), 7);
+    // Use exactly 4 columns per row
+    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), 4);
+    gtk_flow_box_set_min_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), 4);
+    gtk_widget_set_halign(self->all_apps_grid, GTK_ALIGN_CENTER);
+    
+    // Set width to ensure consistent alignment
+    gtk_widget_set_size_request(self->all_apps_grid, -1, -1);
   }
   
   /* Show/hide the appropriate view */

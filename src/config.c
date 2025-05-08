@@ -79,7 +79,7 @@ set_defaults(HyprMenuConfig *config)
   
   // View settings
   config->use_grid_view = FALSE;  // Default to list view
-  config->grid_columns = 4;       // Default to 4 columns in grid view
+  config->grid_columns = 4;       // Exactly 4 columns in grid view
   config->grid_item_size = 80;    // Smaller square size for a tile-like appearance
   
   // File paths
@@ -352,7 +352,8 @@ hyprmenu_config_apply_css()
     "  font-size: %dpx;\n"
     "  color: %s;\n"
     "  border: 1px solid rgba(255, 255, 255, 0.15);\n"
-    "  margin: 8px 4px 12px 4px;\n",
+    "  margin: 8px 4px 12px 4px;\n"
+    "  width: 95%%;\n",
     config->search_background_color, config->search_background_opacity,
     config->search_corner_radius, config->search_padding,
     config->search_font_size, config->search_text_color);
@@ -374,10 +375,13 @@ hyprmenu_config_apply_css()
     ".hyprmenu-app-grid {\n"
     "  background-color: transparent;\n"
     "  padding: 4px;\n"
+    "  margin: 0 auto;\n"
     "}\n"
     ".hyprmenu-category-list {\n"
     "  background-color: transparent;\n"
     "  padding: 4px;\n"
+    "  margin: 0 auto;\n"
+    "  max-width: 680px;\n"
     "}\n");
   
   // Category styles with AGS effects
@@ -461,6 +465,8 @@ hyprmenu_config_apply_css()
     "  background-color: rgba(50, 50, 60, 0.7);\n"
     "  border-radius: 8px;\n"
     "  border: 1px solid rgba(255, 255, 255, 0.08);\n"
+    "  width: 120px;\n"
+    "  height: 120px;\n"
     "}\n"
     ".grid-item:hover {\n"
     "  background-color: rgba(70, 70, 80, 0.8);\n"
@@ -469,52 +475,30 @@ hyprmenu_config_apply_css()
     ".hyprmenu-app-grid flowboxchild {\n"
     "  padding: 0;\n"
     "  margin: 0;\n"
-    "  min-width: 100px;\n"
-    "  min-height: 100px;\n"
-    "}\n"
-    ".hyprmenu-app-entry.grid-item {\n"
-    "  padding: 4px;\n"
-    "  margin: 0;\n"
-    "  text-align: center;\n"
-    "  width: 100px;\n"
-    "  height: 100px;\n"
-    "  min-width: 100px;\n"
-    "  min-height: 100px;\n"
-    "  max-width: 100px;\n"
-    "  max-height: 100px;\n"
-    "  aspect-ratio: 1/1;\n"
-    "  box-sizing: border-box;\n"
-    "  border-radius: 8px;\n"
-    "  background-color: rgba(50, 50, 50, 0.8);\n"
-    "}\n"
-    ".hyprmenu-app-entry.grid-item:hover {\n"
-    "  background-color: rgba(100, 100, 100, 0.7);\n"
-    "}\n"
-    ".hyprmenu-app-entry.grid-item .hyprmenu-app-icon {\n"
-    "  margin-right: 0;\n"
-    "  margin-bottom: 6px;\n"
-    "  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5));\n"
-    "}\n"
-    ".hyprmenu-app-entry.grid-item .hyprmenu-app-name {\n"
-    "  text-align: center;\n"
-    "  font-size: %dpx;\n"
-    "}\n"
-    ".hyprmenu-app-icon {\n"
-    "  margin-right: 12px;\n"
-    "  min-width: 32px;\n"
-    "  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5));\n"
-    "}\n"
-    ".hyprmenu-app-name {\n"
+    "  min-width: 120px;\n"
+    "  min-height: 120px;\n"
+    "}\n");
+    
+  // App name styles
+  g_string_append_printf(css,
+    ".app-name {\n"
     "  color: %s;\n"
     "  font-size: %dpx;\n"
-    "  text-shadow: 0px 1px 1px rgba(0, 0, 0, 0.3);\n"
-    "  font-weight: 500;\n"
-    "  background-color: rgba(0, 0, 0, 0.2);\n"
+    "  font-weight: bold;\n"
+    "  margin-bottom: 2px;\n"
+    "}\n",
+    config->app_entry_text_color, config->app_entry_font_size);
+    
+  // App description styles
+  g_string_append_printf(css,
+    ".app-description {\n"
+    "  color: %s;\n"
+    "  font-size: %dpx;\n"
+    "  opacity: 0.7;\n"
     "  padding: 2px 4px;\n"
     "  border-radius: 4px;\n"
     "}\n",
-    config->app_entry_font_size - 2,
-    config->app_entry_text_color, config->app_entry_font_size);
+    config->app_entry_text_color, config->app_entry_font_size - 2);
   
   // Scrollbar styles
   g_string_append(css,
@@ -536,21 +520,65 @@ hyprmenu_config_apply_css()
     "  background-color: rgba(255, 255, 255, 0.4);\n"
     "}\n");
   
-  // Save to file
-  if (g_file_set_contents(config->css_file, css->str, -1, NULL)) {
-    g_print("CSS saved to %s\n", config->css_file);
-  } else {
-    g_warning("Failed to save CSS file: %s", config->css_file);
-  }
+  // System buttons styling
+  g_string_append(css,
+    ".hyprmenu-system-buttons {\n"
+    "  background-color: rgba(40, 42, 54, 0.7);\n"
+    "  border-radius: 6px;\n"
+    "  padding: 4px 8px;\n"
+    "  margin: 8px 0px 2px 0px;\n"
+    "  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);\n"
+    "}\n"
+    
+    ".system-button {\n"
+    "  background-color: transparent;\n"
+    "  border-radius: 4px;\n"
+    "  border: none;\n"
+    "  padding: 4px;\n"
+    "  min-width: 24px;\n"
+    "  min-height: 24px;\n"
+    "  margin: 0 4px;\n"
+    "  transition: all 0.15s ease;\n"
+    "  color: rgba(255, 255, 255, 0.85);\n"
+    "  outline: none;\n"
+    "}\n"
+    
+    ".system-button:hover {\n"
+    "  background-color: rgba(80, 85, 100, 0.5);\n"
+    "  color: rgba(255, 255, 255, 1.0);\n"
+    "  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);\n"
+    "}\n"
+    
+    ".system-button:active {\n"
+    "  background-color: rgba(90, 95, 120, 0.6);\n"
+    "  transform: translateY(1px);\n"
+    "  box-shadow: none;\n"
+    "  color: rgba(255, 255, 255, 1.0);\n"
+    "}\n");
   
   // Apply CSS to application
   GtkCssProvider *provider = gtk_css_provider_new();
   gtk_css_provider_load_from_string(provider, css->str);
-  gtk_style_context_add_provider_for_display(gdk_display_get_default(),
-                                          GTK_STYLE_PROVIDER(provider),
-                                          GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-  g_object_unref(provider);
   
-  // Free string
+  // Apply provider to screen
+  GdkDisplay *display = gdk_display_get_default();
+  gtk_style_context_add_provider_for_display(display,
+                                            GTK_STYLE_PROVIDER(provider),
+                                            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+  
+  // Free resources
+  g_object_unref(provider);
   g_string_free(css, TRUE);
+  
+  // Load custom CSS file if it exists
+  if (g_file_test(config->css_file, G_FILE_TEST_EXISTS)) {
+    GtkCssProvider *custom_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_path(custom_provider, config->css_file);
+    
+    gtk_style_context_add_provider_for_display(display,
+                                              GTK_STYLE_PROVIDER(custom_provider),
+                                              GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    
+    g_object_unref(custom_provider);
+  }
 } 

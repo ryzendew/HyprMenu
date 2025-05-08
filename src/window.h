@@ -16,6 +16,7 @@ typedef struct _HyprMenuWindow {
   GtkWidget *main_box;
   GtkWidget *search_entry;
   GtkWidget *app_grid;
+  GtkWidget *system_buttons_box;
   
   GtkEventController *key_controller;
   GtkGestureClick *click_gesture;

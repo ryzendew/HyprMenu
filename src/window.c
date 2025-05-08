@@ -173,6 +173,111 @@ on_click_outside(GtkGestureClick *gesture,
   }
 }
 
+// System action functions
+static void
+on_logout_clicked (GtkButton *button, gpointer user_data)
+{
+  (void)button;
+  (void)user_data;
+  
+  g_spawn_command_line_async("hyprctl dispatch exit", NULL);
+  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(user_data));
+  if (app) {
+    g_application_quit(G_APPLICATION(app));
+  }
+}
+
+static void
+on_shutdown_clicked (GtkButton *button, gpointer user_data)
+{
+  (void)button;
+  (void)user_data;
+  
+  g_spawn_command_line_async("systemctl poweroff", NULL);
+  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(user_data));
+  if (app) {
+    g_application_quit(G_APPLICATION(app));
+  }
+}
+
+static void
+on_reboot_clicked (GtkButton *button, gpointer user_data)
+{
+  (void)button;
+  (void)user_data;
+  
+  g_spawn_command_line_async("systemctl reboot", NULL);
+  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(user_data));
+  if (app) {
+    g_application_quit(G_APPLICATION(app));
+  }
+}
+
+static void
+on_hibernate_clicked (GtkButton *button, gpointer user_data)
+{
+  (void)button;
+  (void)user_data;
+  
+  g_spawn_command_line_async("systemctl hibernate", NULL);
+  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(user_data));
+  if (app) {
+    g_application_quit(G_APPLICATION(app));
+  }
+}
+
+static void
+on_sleep_clicked (GtkButton *button, gpointer user_data)
+{
+  (void)button;
+  (void)user_data;
+  
+  g_spawn_command_line_async("systemctl suspend", NULL);
+  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(user_data));
+  if (app) {
+    g_application_quit(G_APPLICATION(app));
+  }
+}
+
+static void
+on_lock_clicked (GtkButton *button, gpointer user_data)
+{
+  (void)button;
+  (void)user_data;
+  
+  g_spawn_command_line_async("swaylock", NULL);
+  GtkApplication *app = gtk_window_get_application(GTK_WINDOW(user_data));
+  if (app) {
+    g_application_quit(G_APPLICATION(app));
+  }
+}
+
+static GtkWidget*
+create_system_button (const char *icon_name, const char *label, GCallback callback, gpointer user_data)
+{
+  GtkWidget *button = gtk_button_new();
+  
+  // Create icon
+  GtkWidget *icon = gtk_image_new_from_icon_name(icon_name);
+  gtk_image_set_pixel_size(GTK_IMAGE(icon), 16);
+  
+  // Set button properties
+  gtk_button_set_child(GTK_BUTTON(button), icon);
+  gtk_widget_add_css_class(button, "system-button");
+  gtk_widget_set_margin_top(button, 0);
+  gtk_widget_set_margin_bottom(button, 0);
+  
+  // Set tooltip text (shown on hover)
+  gtk_widget_set_tooltip_text(button, label);
+  
+  // Connect signal
+  if (callback) {
+    g_signal_connect(button, "clicked", callback, user_data);
+  }
+  
+  return button;
+}
+
 static void
 hyprmenu_window_init (HyprMenuWindow *self)
 {
@@ -218,19 +323,33 @@ hyprmenu_window_init (HyprMenuWindow *self)
   /* Add CSS classes for styling */
   gtk_widget_add_css_class (GTK_WIDGET (self), "hyprmenu-window");
   
+  /* Create main container (vertical box) */
+  GtkWidget *v_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_set_margin_start(v_box, 12);
+  gtk_widget_set_margin_end(v_box, 12);
+  gtk_widget_set_margin_top(v_box, 12);
+  gtk_widget_set_margin_bottom(v_box, 12);
+  gtk_window_set_child(GTK_WINDOW(self), v_box);
+  
+  /* Create content area */
+  GtkWidget *content_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_widget_set_hexpand(content_box, TRUE);
+  gtk_widget_set_vexpand(content_box, TRUE);
+  gtk_widget_set_halign(content_box, GTK_ALIGN_CENTER);
+  gtk_box_append(GTK_BOX(v_box), content_box);
+  
   /* Create main box */
   self->main_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   gtk_widget_add_css_class (self->main_box, "hyprmenu-main-box");
-  gtk_widget_set_margin_start (self->main_box, 12);
-  gtk_widget_set_margin_end (self->main_box, 12);
-  gtk_widget_set_margin_top (self->main_box, 12);
-  gtk_widget_set_margin_bottom (self->main_box, 12);
-  gtk_window_set_child (GTK_WINDOW (self), self->main_box);
+  gtk_widget_set_hexpand (self->main_box, TRUE);
+  gtk_widget_set_halign(self->main_box, GTK_ALIGN_CENTER);
+  gtk_box_append(GTK_BOX(content_box), self->main_box);
   
   /* Create search entry */
   self->search_entry = gtk_search_entry_new ();
   gtk_widget_add_css_class (self->search_entry, "hyprmenu-search");
   gtk_widget_set_hexpand (self->search_entry, TRUE);
+  gtk_widget_set_halign(self->search_entry, GTK_ALIGN_FILL);
   gtk_widget_set_margin_start (self->search_entry, 12);
   gtk_widget_set_margin_end (self->search_entry, 12);
   gtk_widget_set_margin_top (self->search_entry, 12);
@@ -242,7 +361,33 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_widget_add_css_class (self->app_grid, "hyprmenu-app-grid");
   gtk_widget_set_hexpand (self->app_grid, TRUE);
   gtk_widget_set_vexpand (self->app_grid, TRUE);
+  gtk_widget_set_halign(self->app_grid, GTK_ALIGN_CENTER);
   gtk_box_append (GTK_BOX (self->main_box), self->app_grid);
+  
+  /* Create system buttons box at the bottom */
+  self->system_buttons_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+  gtk_widget_add_css_class(self->system_buttons_box, "hyprmenu-system-buttons");
+  gtk_widget_set_halign(self->system_buttons_box, GTK_ALIGN_CENTER);
+  gtk_widget_set_margin_top(self->system_buttons_box, 6);
+  gtk_widget_set_margin_bottom(self->system_buttons_box, 0);
+  
+  /* Add system buttons */
+  GtkWidget *logout_button = create_system_button("system-log-out-symbolic", "Logout", G_CALLBACK(on_logout_clicked), self);
+  GtkWidget *shutdown_button = create_system_button("system-shutdown-symbolic", "Shutdown", G_CALLBACK(on_shutdown_clicked), self);
+  GtkWidget *reboot_button = create_system_button("system-reboot-symbolic", "Reboot", G_CALLBACK(on_reboot_clicked), self);
+  GtkWidget *hibernate_button = create_system_button("system-suspend-hibernate-symbolic", "Hibernate", G_CALLBACK(on_hibernate_clicked), self);
+  GtkWidget *sleep_button = create_system_button("system-suspend-symbolic", "Sleep", G_CALLBACK(on_sleep_clicked), self);
+  GtkWidget *lock_button = create_system_button("system-lock-screen-symbolic", "Lock", G_CALLBACK(on_lock_clicked), self);
+  
+  gtk_box_append(GTK_BOX(self->system_buttons_box), logout_button);
+  gtk_box_append(GTK_BOX(self->system_buttons_box), shutdown_button);
+  gtk_box_append(GTK_BOX(self->system_buttons_box), reboot_button);
+  gtk_box_append(GTK_BOX(self->system_buttons_box), hibernate_button);
+  gtk_box_append(GTK_BOX(self->system_buttons_box), sleep_button);
+  gtk_box_append(GTK_BOX(self->system_buttons_box), lock_button);
+  
+  /* Add system buttons to bottom of main container */
+  gtk_box_append(GTK_BOX(v_box), self->system_buttons_box);
   
   /* Connect signals */
   g_signal_connect (self->search_entry, "search-changed",
