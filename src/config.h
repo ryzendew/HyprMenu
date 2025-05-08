@@ -50,29 +50,23 @@ typedef struct _HyprMenuConfig {
   int transparency_shadow_radius;
   
   // Search entry style
-  char *search_background_color;
   double search_background_opacity;
   int search_corner_radius;
-  char *search_text_color;
   int search_font_size;
   char *search_font_family;
   int search_padding;
   
   // App entry style
-  char *app_entry_background_color;
   double app_entry_background_opacity;
   int app_entry_corner_radius;
-  char *app_entry_text_color;
   int app_entry_font_size;
   char *app_entry_font_family;
   int app_entry_padding;
   int app_icon_size;
   
   // Category style
-  char *category_background_color;
   double category_background_opacity;
   int category_corner_radius;
-  char *category_text_color;
   int category_font_size;
   char *category_font_family;
   int category_padding;
@@ -114,18 +108,27 @@ typedef struct _HyprMenuConfig {
   gint grid_columns;          // Number of columns in grid view
   gint grid_item_size;        // Size of grid items (square size in pixels)
 
-  // --- User/pywal color roles ---
+  // --- User/pywal/ags color roles ---
   char *background_color;
   char *border_color;
-  char *text_color;
-  char *button_color;
-  char *button_text_color;
-  char *highlight_color;
-  char *search_color;
-  char *system_button_color;
+  char *search_background_color;
+  char *search_border_color;
+  char *search_text_color;
+  char *category_background_color;
+  char *category_text_color;
+  char *app_entry_background_color;
+  char *app_entry_border_color;
+  char *app_entry_text_color;
+  char *app_entry_icon_color;
+  char *system_button_background_color;
   char *system_button_icon_color;
+  char *highlight_color;
+  char *separator_color;
+  char *scrollbar_color;
+  char *shadow_color;
   // ---
   gboolean use_pywal_colors;
+  gboolean use_ags_colors;
 } HyprMenuConfig;
 
 // Global config instance
