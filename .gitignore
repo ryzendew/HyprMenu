@@ -30,3 +30,50 @@
 *.exe
 *.out
 *.app
+
+# Build directories
+build/
+_build/
+dist/
+*.o
+*.so
+*.a
+*.la
+*.lo
+*.obj
+*.exe
+*.out
+*.app
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Dependencies
+deps/
+vendor/
+
+# Generated files
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# System files
+*.conf
+*.desktop
+*.service
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Package files
+*.pkg.tar.zst
+*.deb
+*.rpm
