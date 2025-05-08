@@ -19,6 +19,23 @@ typedef struct _HyprMenuConfig {
   int border_width;
   char *border_color;
   
+  // AGS-style effects
+  gboolean blur_enabled;
+  int blur_radius;
+  double blur_brightness;
+  double blur_contrast;
+  double blur_saturation;
+  double blur_noise;
+  gboolean blur_grayscale;
+  
+  // Transparency settings
+  gboolean transparency_enabled;
+  double transparency_alpha;
+  gboolean transparency_blur;
+  gboolean transparency_shadow;
+  char *transparency_shadow_color;
+  int transparency_shadow_radius;
+  
   // Search entry style
   char *search_background_color;
   double search_background_opacity;

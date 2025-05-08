@@ -24,6 +24,23 @@ set_defaults(HyprMenuConfig *config)
   config->border_width = 1;
   config->border_color = g_strdup("rgba(255, 255, 255, 0.1)");
   
+  // AGS-style effects
+  config->blur_enabled = TRUE;
+  config->blur_radius = 5;
+  config->blur_brightness = 1.0;
+  config->blur_contrast = 1.0;
+  config->blur_saturation = 1.0;
+  config->blur_noise = 0.0;
+  config->blur_grayscale = FALSE;
+  
+  // Transparency settings
+  config->transparency_enabled = TRUE;
+  config->transparency_alpha = 0.85;
+  config->transparency_blur = TRUE;
+  config->transparency_shadow = TRUE;
+  config->transparency_shadow_color = g_strdup("rgba(0, 0, 0, 0.3)");
+  config->transparency_shadow_radius = 20;
+  
   // Search entry style
   config->search_background_color = g_strdup("#323232");
   config->search_background_opacity = 0.7;
@@ -61,9 +78,9 @@ set_defaults(HyprMenuConfig *config)
   config->max_recent_apps = 5;
   
   // File paths
-  config->config_dir = g_build_filename(g_get_user_config_dir(), "hyprmenu", NULL);
+  config->config_dir = g_build_filename(g_get_home_dir(), ".config", "hyprmenu", NULL);
   config->config_file = g_build_filename(config->config_dir, "hyprmenu.conf", NULL);
-  config->css_file = g_build_filename(config->config_dir, "style.css", NULL);
+  config->css_file = g_build_filename(config->config_dir, "hyprmenu.css", NULL);
 }
 
 gboolean
@@ -150,6 +167,24 @@ hyprmenu_config_load()
     config->border_width = g_key_file_get_integer(keyfile, "Style", "border_width", NULL);
     g_free(config->border_color);
     config->border_color = g_key_file_get_string(keyfile, "Style", "border_color", NULL);
+    
+    // AGS-style effects
+    config->blur_enabled = g_key_file_get_boolean(keyfile, "Style", "blur_enabled", NULL);
+    config->blur_radius = g_key_file_get_integer(keyfile, "Style", "blur_radius", NULL);
+    config->blur_brightness = g_key_file_get_double(keyfile, "Style", "blur_brightness", NULL);
+    config->blur_contrast = g_key_file_get_double(keyfile, "Style", "blur_contrast", NULL);
+    config->blur_saturation = g_key_file_get_double(keyfile, "Style", "blur_saturation", NULL);
+    config->blur_noise = g_key_file_get_double(keyfile, "Style", "blur_noise", NULL);
+    config->blur_grayscale = g_key_file_get_boolean(keyfile, "Style", "blur_grayscale", NULL);
+    
+    // Transparency settings
+    config->transparency_enabled = g_key_file_get_boolean(keyfile, "Style", "transparency_enabled", NULL);
+    config->transparency_alpha = g_key_file_get_double(keyfile, "Style", "transparency_alpha", NULL);
+    config->transparency_blur = g_key_file_get_boolean(keyfile, "Style", "transparency_blur", NULL);
+    config->transparency_shadow = g_key_file_get_boolean(keyfile, "Style", "transparency_shadow", NULL);
+    g_free(config->transparency_shadow_color);
+    config->transparency_shadow_color = g_key_file_get_string(keyfile, "Style", "transparency_shadow_color", NULL);
+    config->transparency_shadow_radius = g_key_file_get_integer(keyfile, "Style", "transparency_shadow_radius", NULL);
   }
   
   // Behavior section
@@ -184,6 +219,23 @@ hyprmenu_config_save()
   g_key_file_set_integer(keyfile, "Style", "border_width", config->border_width);
   g_key_file_set_string(keyfile, "Style", "border_color", config->border_color);
   
+  // AGS-style effects
+  g_key_file_set_boolean(keyfile, "Style", "blur_enabled", config->blur_enabled);
+  g_key_file_set_integer(keyfile, "Style", "blur_radius", config->blur_radius);
+  g_key_file_set_double(keyfile, "Style", "blur_brightness", config->blur_brightness);
+  g_key_file_set_double(keyfile, "Style", "blur_contrast", config->blur_contrast);
+  g_key_file_set_double(keyfile, "Style", "blur_saturation", config->blur_saturation);
+  g_key_file_set_double(keyfile, "Style", "blur_noise", config->blur_noise);
+  g_key_file_set_boolean(keyfile, "Style", "blur_grayscale", config->blur_grayscale);
+  
+  // Transparency settings
+  g_key_file_set_boolean(keyfile, "Style", "transparency_enabled", config->transparency_enabled);
+  g_key_file_set_double(keyfile, "Style", "transparency_alpha", config->transparency_alpha);
+  g_key_file_set_boolean(keyfile, "Style", "transparency_blur", config->transparency_blur);
+  g_key_file_set_boolean(keyfile, "Style", "transparency_shadow", config->transparency_shadow);
+  g_key_file_set_string(keyfile, "Style", "transparency_shadow_color", config->transparency_shadow_color);
+  g_key_file_set_integer(keyfile, "Style", "transparency_shadow_radius", config->transparency_shadow_radius);
+  
   // Behavior
   g_key_file_set_boolean(keyfile, "Behavior", "close_on_click_outside", config->close_on_click_outside);
   g_key_file_set_boolean(keyfile, "Behavior", "close_on_super_key", config->close_on_super_key);
@@ -191,29 +243,19 @@ hyprmenu_config_save()
   g_key_file_set_boolean(keyfile, "Behavior", "focus_search_on_open", config->focus_search_on_open);
   g_key_file_set_integer(keyfile, "Behavior", "max_recent_apps", config->max_recent_apps);
   
-  // Add comment
-  g_key_file_set_comment(keyfile, NULL, NULL, 
-    "HyprMenu Configuration\n"
-    "This file is auto-generated and can be edited to customize HyprMenu.\n"
-    "Changes will be applied the next time HyprMenu is started.\n", 
-    NULL);
-  
   // Save to file
   g_autoptr(GError) error = NULL;
-  gsize length;
-  g_autofree gchar *data = g_key_file_to_data(keyfile, &length, &error);
-  
-  if (error) {
-    g_warning("Failed to generate config data: %s", error->message);
+  g_autofree char *data = g_key_file_to_data(keyfile, NULL, &error);
+  if (!data) {
+    g_warning("Failed to convert config to data: %s", error->message);
     return FALSE;
   }
   
-  if (!g_file_set_contents(config->config_file, data, length, &error)) {
+  if (!g_file_set_contents(config->config_file, data, -1, &error)) {
     g_warning("Failed to save config file: %s", error->message);
     return FALSE;
   }
   
-  g_print("Configuration saved to %s\n", config->config_file);
   return TRUE;
 }
 
@@ -223,7 +265,7 @@ hyprmenu_config_apply_css()
   // Generate CSS based on configuration
   GString *css = g_string_new("");
   
-  // Window styles
+  // Window styles with AGS effects
   g_string_append_printf(css, 
     ".hyprmenu-window {\n"
     "  background-color: rgba(%s, %.2f);\n"
@@ -231,6 +273,44 @@ hyprmenu_config_apply_css()
     "  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);\n",
     config->background_color, config->background_opacity, 
     config->corner_radius);
+  
+  // Add AGS-style blur effects if enabled
+  if (config->blur_enabled) {
+    g_string_append_printf(css,
+      "  backdrop-filter: blur(%dpx) brightness(%.1f) contrast(%.1f) saturate(%.1f);\n",
+      config->blur_radius,
+      config->blur_brightness,
+      config->blur_contrast,
+      config->blur_saturation);
+    
+    if (config->blur_noise > 0) {
+      g_string_append_printf(css,
+        "  backdrop-filter: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\"><filter id=\"noise\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"%.2f\" numOctaves=\"3\" stitchTiles=\"stitch\"/></filter></svg>#noise');\n",
+        config->blur_noise);
+    }
+    
+    if (config->blur_grayscale) {
+      g_string_append(css, "  backdrop-filter: grayscale(100%);\n");
+    }
+  }
+  
+  // Add transparency effects if enabled
+  if (config->transparency_enabled) {
+    g_string_append_printf(css,
+      "  background-color: rgba(%s, %.2f);\n",
+      config->background_color, config->transparency_alpha);
+    
+    if (config->transparency_blur) {
+      g_string_append(css, "  backdrop-filter: blur(10px);\n");
+    }
+    
+    if (config->transparency_shadow) {
+      g_string_append_printf(css,
+        "  box-shadow: 0 0 %dpx %s;\n",
+        config->transparency_shadow_radius,
+        config->transparency_shadow_color);
+    }
+  }
   
   if (config->border_width > 0) {
     g_string_append_printf(css, 
@@ -246,7 +326,7 @@ hyprmenu_config_apply_css()
     "  padding: 8px;\n"
     "}\n");
   
-  // Search entry styles
+  // Search entry styles with AGS effects
   g_string_append_printf(css, 
     ".hyprmenu-search {\n"
     "  background-color: rgba(%s, %.2f);\n"
@@ -255,15 +335,22 @@ hyprmenu_config_apply_css()
     "  font-size: %dpx;\n"
     "  color: %s;\n"
     "  border: 1px solid rgba(255, 255, 255, 0.15);\n"
-    "  margin: 8px 4px 12px 4px;\n"
+    "  margin: 8px 4px 12px 4px;\n",
+    config->search_background_color, config->search_background_opacity,
+    config->search_corner_radius, config->search_padding,
+    config->search_font_size, config->search_text_color);
+  
+  if (config->blur_enabled) {
+    g_string_append(css,
+      "  backdrop-filter: blur(5px);\n");
+  }
+  
+  g_string_append(css,
     "}\n"
     ".hyprmenu-search:focus {\n"
     "  border-color: rgba(255, 255, 255, 0.3);\n"
     "  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);\n"
-    "}\n",
-    config->search_background_color, config->search_background_opacity,
-    config->search_corner_radius, config->search_padding,
-    config->search_font_size, config->search_text_color);
+    "}\n");
   
   // App grid styles
   g_string_append(css,
@@ -276,14 +363,23 @@ hyprmenu_config_apply_css()
     "  padding: 4px;\n"
     "}\n");
   
-  // Category styles
+  // Category styles with AGS effects
   g_string_append_printf(css, 
     ".hyprmenu-category {\n"
     "  background-color: rgba(%s, %.2f);\n"
     "  border-radius: %dpx;\n"
     "  margin: 4px 0px;\n"
     "  padding: %dpx;\n"
-    "  border: 1px solid rgba(255, 255, 255, 0.05);\n"
+    "  border: 1px solid rgba(255, 255, 255, 0.05);\n",
+    config->category_background_color, config->category_background_opacity,
+    config->category_corner_radius, config->category_padding);
+  
+  if (config->blur_enabled) {
+    g_string_append(css,
+      "  backdrop-filter: blur(3px);\n");
+  }
+  
+  g_string_append_printf(css,
     "}\n"
     ".hyprmenu-category-title {\n"
     "  color: %s;\n"
@@ -291,8 +387,6 @@ hyprmenu_config_apply_css()
     "  font-weight: bold;\n"
     "  padding: 6px 8px;\n"
     "  margin-bottom: 4px;\n",
-    config->category_background_color, config->category_background_opacity,
-    config->category_corner_radius, config->category_padding,
     config->category_text_color, config->category_font_size);
   
   // Add separator if configured
@@ -302,14 +396,23 @@ hyprmenu_config_apply_css()
   
   g_string_append(css, "}\n");
   
-  // App entry styles
+  // App entry styles with AGS effects
   g_string_append_printf(css, 
     ".hyprmenu-app-entry {\n"
     "  background-color: rgba(%s, %.2f);\n"
     "  border-radius: %dpx;\n"
     "  padding: %dpx 8px;\n"
     "  margin: 2px 4px;\n"
-    "  transition: all 0.2s ease;\n"
+    "  transition: all 0.2s ease;\n",
+    config->app_entry_background_color, config->app_entry_background_opacity,
+    config->app_entry_corner_radius, config->app_entry_padding);
+  
+  if (config->blur_enabled) {
+    g_string_append(css,
+      "  backdrop-filter: blur(2px);\n");
+  }
+  
+  g_string_append_printf(css,
     "}\n"
     ".hyprmenu-app-entry:hover {\n"
     "  background-color: rgba(75, 75, 75, 0.8);\n"
@@ -324,8 +427,6 @@ hyprmenu_config_apply_css()
     "  color: %s;\n"
     "  font-size: %dpx;\n"
     "}\n",
-    config->app_entry_background_color, config->app_entry_background_opacity,
-    config->app_entry_corner_radius, config->app_entry_padding,
     config->app_entry_text_color, config->app_entry_font_size);
   
   // Scrollbar styles

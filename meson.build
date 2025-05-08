@@ -76,11 +76,6 @@ install_data('data/org.hyprmenu.desktop',
   install_dir: join_paths(datadir, 'applications')
 )
 
-# Install default config
-install_data('data/hyprmenu.conf',
-  install_dir: join_paths(sysconfdir, 'hyprmenu')
-)
-
 # Install icons
 install_data('data/icons/hyprmenu.svg',
   install_dir: join_paths(icondir, 'scalable/apps')
