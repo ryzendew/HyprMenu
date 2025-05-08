@@ -45,7 +45,7 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   /* Create flow box for grid view */
   self->all_apps_grid = gtk_flow_box_new();
   gtk_flow_box_set_selection_mode(GTK_FLOW_BOX(self->all_apps_grid), GTK_SELECTION_NONE);
-  gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), config->grid_columns);
+  gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), 4);
   
   /* Disable homogeneous sizing - we'll control size in the items themselves */
   gtk_flow_box_set_homogeneous(GTK_FLOW_BOX(self->all_apps_grid), FALSE);
@@ -56,10 +56,10 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   
   gtk_widget_add_css_class(self->all_apps_grid, "hyprmenu-app-grid");
   gtk_widget_set_visible(self->all_apps_grid, FALSE);  // Hide by default (list view is default)
-  gtk_widget_set_margin_start(self->all_apps_grid, 8);
-  gtk_widget_set_margin_end(self->all_apps_grid, 8);
-  gtk_widget_set_margin_top(self->all_apps_grid, 8);
-  gtk_widget_set_margin_bottom(self->all_apps_grid, 8);
+  gtk_widget_set_margin_start(self->all_apps_grid, 12);
+  gtk_widget_set_margin_end(self->all_apps_grid, 12);
+  gtk_widget_set_margin_top(self->all_apps_grid, 12);
+  gtk_widget_set_margin_bottom(self->all_apps_grid, 12);
   
   /* Initialize category hash table */
   self->category_boxes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
@@ -188,7 +188,8 @@ hyprmenu_category_list_set_grid_view (HyprMenuCategoryList *self, gboolean use_g
   
   /* Update the flow box column count (in case config changed) */
   if (use_grid_view) {
-    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), config->grid_columns);
+    // Always enforce 4 columns in grid view
+    gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), 4);
   }
   
   /* Show/hide the appropriate view */

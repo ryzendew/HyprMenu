@@ -417,6 +417,11 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
   gtk_widget_set_tooltip_text(self->toggle_button,
     config->use_grid_view ? "Switch to List View" : "Switch to Grid View");
   
+  // Always use 4 columns for grid view, regardless of config
+  if (config->use_grid_view) {
+    config->grid_columns = 4;
+  }
+  
   // Update the category list view mode
   hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), 
                                       config->use_grid_view);
@@ -429,7 +434,8 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
     GtkWidget *viewport = gtk_widget_get_parent(self->category_list);
     if (GTK_IS_VIEWPORT(viewport)) {
       // Calculate viewport width based on grid items
-      int total_width = (config->grid_item_size + 8) * config->grid_columns + 16;
+      // Use smaller spacing for a more compact tile appearance
+      int total_width = (config->grid_item_size + 8) * config->grid_columns + 24;
       gtk_widget_set_size_request(viewport, total_width, -1);
     }
   } else {

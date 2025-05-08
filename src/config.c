@@ -79,8 +79,8 @@ set_defaults(HyprMenuConfig *config)
   
   // View settings
   config->use_grid_view = FALSE;  // Default to list view
-  config->grid_columns = 5;       // Default to 5 columns in grid view
-  config->grid_item_size = 120;    // Default square size of 120px
+  config->grid_columns = 4;       // Default to 4 columns in grid view
+  config->grid_item_size = 80;    // Smaller square size for a tile-like appearance
   
   // File paths
   config->config_dir = g_build_filename(g_get_home_dir(), ".config", "hyprmenu", NULL);
@@ -441,10 +441,11 @@ hyprmenu_config_apply_css()
     "  min-width: %dpx;\n"
     "  min-height: %dpx;\n"
     "  padding: 0;\n"
+    "  margin: 0;\n"
     "}\n"
     ".hyprmenu-app-entry.grid-item {\n"
-    "  padding: 8px;\n"
-    "  margin: 4px;\n"
+    "  padding: 4px;\n"
+    "  margin: 0;\n"
     "  text-align: center;\n"
     "  width: %dpx;\n"
     "  height: %dpx;\n"
@@ -458,6 +459,10 @@ hyprmenu_config_apply_css()
     "  flex-direction: column;\n"
     "  justify-content: center;\n"
     "  align-items: center;\n"
+    "  border-radius: 4px;\n"
+    "}\n"
+    ".hyprmenu-app-entry.grid-item:hover {\n"
+    "  background-color: rgba(100, 100, 100, 0.7);\n"
     "}\n"
     ".hyprmenu-app-entry.grid-item .hyprmenu-app-icon {\n"
     "  margin-right: 0;\n"
@@ -478,7 +483,7 @@ hyprmenu_config_apply_css()
     config->grid_item_size, config->grid_item_size,
     config->grid_item_size, config->grid_item_size,
     config->grid_item_size, config->grid_item_size,
-    config->app_entry_font_size - 1,  // Slightly smaller font for grid view
+    config->app_entry_font_size - 2,  // Smaller font for grid view to match Windows style
     config->app_entry_text_color, config->app_entry_font_size);
   
   // Scrollbar styles

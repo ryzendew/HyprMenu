@@ -270,16 +270,19 @@ hyprmenu_app_entry_set_grid_layout (HyprMenuAppEntry *self, gboolean is_grid)
     gtk_widget_set_halign(self->main_box, GTK_ALIGN_CENTER);
     gtk_widget_set_valign(self->main_box, GTK_ALIGN_CENTER);
     
-    /* Make icon larger for grid view */
-    gtk_image_set_pixel_size(GTK_IMAGE(self->icon), 48);
+    /* Set icon size smaller for tile-like appearance */
+    gtk_image_set_pixel_size(GTK_IMAGE(self->icon), 32);
     
     /* Update label properties for grid view */
     gtk_label_set_justify(GTK_LABEL(self->name_label), GTK_JUSTIFY_CENTER);
     gtk_label_set_lines(GTK_LABEL(self->name_label), 2);
     gtk_label_set_ellipsize(GTK_LABEL(self->name_label), PANGO_ELLIPSIZE_END);
-    gtk_label_set_max_width_chars(GTK_LABEL(self->name_label), 12);
+    gtk_label_set_max_width_chars(GTK_LABEL(self->name_label), 10);
     gtk_widget_set_halign(self->name_label, GTK_ALIGN_CENTER);
-    gtk_widget_set_margin_top(self->name_label, 8);
+    gtk_widget_set_margin_top(self->name_label, 4);
+    
+    /* Center icon as well */
+    gtk_widget_set_halign(self->icon, GTK_ALIGN_CENTER);
   } else {
     /* List layout */
     gtk_widget_remove_css_class(self->main_box, "grid-item");
