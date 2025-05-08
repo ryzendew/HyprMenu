@@ -525,21 +525,54 @@ hyprmenu_category_list_filter (HyprMenuCategoryList *self,
 {
   g_return_val_if_fail(HYPRMENU_IS_CATEGORY_LIST(self), FALSE);
   
+  g_print("Filtering with search text: '%s'\n", search_text ? search_text : "(null)");
+  
+  if (self->grid_view_mode) {
+    // Grid view filtering
+    GtkWidget *child = gtk_widget_get_first_child(self->all_apps_grid);
+    while (child) {
+      GtkWidget *next = gtk_widget_get_next_sibling(child);
+      if (GTK_IS_FLOW_BOX_CHILD(child)) {
+        GtkWidget *app = gtk_flow_box_child_get_child(GTK_FLOW_BOX_CHILD(child));
+        if (HYPRMENU_IS_APP_ENTRY(app)) {
+          gboolean visible = TRUE;
+          if (search_text && *search_text) {
+            const char *app_name = hyprmenu_app_entry_get_app_name(HYPRMENU_APP_ENTRY(app));
+            char *name_lower = g_utf8_strdown(app_name, -1);
+            char *search_lower = g_utf8_strdown(search_text, -1);
+            
+            visible = (strstr(name_lower, search_lower) != NULL);
+            
+            g_free(name_lower);
+            g_free(search_lower);
+          }
+          
+          gtk_widget_set_visible(child, visible);
+        }
+      }
+      child = next;
+    }
+    
+    return TRUE;
+  }
+  
+  // List view filtering
   GHashTableIter iter;
   gpointer key, value;
   
   g_hash_table_iter_init(&iter, self->category_boxes);
   while (g_hash_table_iter_next(&iter, &key, &value)) {
     GtkWidget *category_box = GTK_WIDGET(value);
-    GtkWidget *content = gtk_widget_get_last_child(category_box);
+    GtkWidget *list_box = g_object_get_data(G_OBJECT(category_box), "list-box");
     gboolean has_visible_items = FALSE;
     
-    if (GTK_IS_FLOW_BOX(content) || GTK_IS_LIST_BOX(content)) {
-      GtkWidget *child = gtk_widget_get_first_child(content);
+    if (GTK_IS_LIST_BOX(list_box)) {
+      GtkWidget *child = gtk_widget_get_first_child(list_box);
       while (child) {
         GtkWidget *next = gtk_widget_get_next_sibling(child);
-        if (GTK_IS_FLOW_BOX_CHILD(child) || GTK_IS_LIST_BOX_ROW(child)) {
-          GtkWidget *app = gtk_widget_get_first_child(child);
+        if (GTK_IS_LIST_BOX_ROW(child)) {
+          // Get the app widget from the row's data
+          GtkWidget *app = g_object_get_data(G_OBJECT(child), "app-widget");
           if (HYPRMENU_IS_APP_ENTRY(app)) {
             gboolean visible = TRUE;
             if (search_text && *search_text) {
