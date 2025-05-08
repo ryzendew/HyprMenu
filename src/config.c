@@ -438,28 +438,25 @@ hyprmenu_config_apply_css()
     "  background-color: rgba(85, 85, 85, 0.9);\n"
     "}\n"
     ".hyprmenu-app-grid flowboxchild {\n"
-    "  min-width: %dpx;\n"
-    "  min-height: %dpx;\n"
     "  padding: 0;\n"
     "  margin: 0;\n"
+    "  min-width: 100px;\n"
+    "  min-height: 100px;\n"
     "}\n"
     ".hyprmenu-app-entry.grid-item {\n"
     "  padding: 4px;\n"
     "  margin: 0;\n"
     "  text-align: center;\n"
-    "  width: %dpx;\n"
-    "  height: %dpx;\n"
-    "  min-width: %dpx;\n"
-    "  min-height: %dpx;\n"
-    "  max-width: %dpx;\n"
-    "  max-height: %dpx;\n"
+    "  width: 100px;\n"
+    "  height: 100px;\n"
+    "  min-width: 100px;\n"
+    "  min-height: 100px;\n"
+    "  max-width: 100px;\n"
+    "  max-height: 100px;\n"
     "  aspect-ratio: 1/1;\n"
     "  box-sizing: border-box;\n"
-    "  display: flex;\n"
-    "  flex-direction: column;\n"
-    "  justify-content: center;\n"
-    "  align-items: center;\n"
     "  border-radius: 4px;\n"
+    "  background-color: rgba(50, 50, 50, 0.8);\n"
     "}\n"
     ".hyprmenu-app-entry.grid-item:hover {\n"
     "  background-color: rgba(100, 100, 100, 0.7);\n"
@@ -479,11 +476,7 @@ hyprmenu_config_apply_css()
     "  color: %s;\n"
     "  font-size: %dpx;\n"
     "}\n",
-    config->grid_item_size, config->grid_item_size,
-    config->grid_item_size, config->grid_item_size,
-    config->grid_item_size, config->grid_item_size,
-    config->grid_item_size, config->grid_item_size,
-    config->app_entry_font_size - 2,  // Smaller font for grid view to match Windows style
+    config->app_entry_font_size - 2,  // Smaller font for grid view
     config->app_entry_text_color, config->app_entry_font_size);
   
   // Scrollbar styles

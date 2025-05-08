@@ -66,6 +66,99 @@ hyprmenu_app_entry_finalize (GObject *object)
   G_OBJECT_CLASS (hyprmenu_app_entry_parent_class)->finalize (object);
 }
 
+/* Create a horizontal box for list view */
+static GtkWidget*
+create_list_layout(HyprMenuAppEntry *self)
+{
+  GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+  gtk_widget_add_css_class(box, "hyprmenu-app-entry");
+  gtk_widget_set_hexpand(box, TRUE);
+  
+  /* Add icon with direct icon name setting */
+  const char *icon_name = NULL;
+  if (self->app_info) {
+    icon_name = g_desktop_app_info_get_string(self->app_info, "Icon");
+    g_print("List icon for %s: %s\n", self->app_name, icon_name ? icon_name : "NULL");
+  }
+  
+  /* Create icon widget */
+  self->icon = gtk_image_new();
+  if (icon_name && icon_name[0] != '\0') {
+    gtk_image_set_from_icon_name(GTK_IMAGE(self->icon), icon_name);
+  } else {
+    gtk_image_set_from_icon_name(GTK_IMAGE(self->icon), "application-x-executable");
+  }
+  gtk_image_set_pixel_size(GTK_IMAGE(self->icon), 24);
+  gtk_widget_add_css_class(self->icon, "hyprmenu-app-icon");
+  gtk_box_append(GTK_BOX(box), self->icon);
+  
+  /* Add name label with direct text setting */
+  self->name_label = gtk_label_new(self->app_name);
+  gtk_widget_add_css_class(self->name_label, "hyprmenu-app-name");
+  gtk_label_set_xalign(GTK_LABEL(self->name_label), 0);
+  gtk_label_set_yalign(GTK_LABEL(self->name_label), 0.5);
+  gtk_widget_set_hexpand(self->name_label, TRUE);
+  gtk_box_append(GTK_BOX(box), self->name_label);
+  
+  return box;
+}
+
+/* Create a tile-style layout for grid view */
+static GtkWidget*
+create_grid_layout(HyprMenuAppEntry *self)
+{
+  /* Create box for tile */
+  GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+  gtk_widget_add_css_class(box, "hyprmenu-app-entry");
+  gtk_widget_add_css_class(box, "grid-item");
+  
+  /* Set fixed size for the box */
+  gtk_widget_set_size_request(box, 100, 100);
+  
+  /* Create a box for the icon to center it */
+  GtkWidget *icon_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_set_hexpand(icon_box, TRUE);
+  gtk_widget_set_halign(icon_box, GTK_ALIGN_CENTER);
+  gtk_widget_set_valign(icon_box, GTK_ALIGN_CENTER);
+  gtk_widget_set_margin_top(icon_box, 10);
+  
+  /* Add icon with debug logging */
+  const char *icon_name = NULL;
+  if (self->app_info) {
+    icon_name = g_desktop_app_info_get_string(self->app_info, "Icon");
+    g_print("Grid icon for %s: %s\n", self->app_name, icon_name ? icon_name : "NULL");
+  }
+  
+  /* Create new image widget directly */
+  self->icon = gtk_image_new();
+  if (icon_name && icon_name[0] != '\0') {
+    gtk_image_set_from_icon_name(GTK_IMAGE(self->icon), icon_name);
+  } else {
+    gtk_image_set_from_icon_name(GTK_IMAGE(self->icon), "application-x-executable");
+  }
+  
+  /* Force icon size in grid view */
+  gtk_image_set_pixel_size(GTK_IMAGE(self->icon), 42);
+  gtk_widget_add_css_class(self->icon, "hyprmenu-app-icon");
+  
+  gtk_box_append(GTK_BOX(icon_box), self->icon);
+  gtk_box_append(GTK_BOX(box), icon_box);
+  
+  /* Add name label */
+  self->name_label = gtk_label_new(self->app_name);
+  gtk_widget_add_css_class(self->name_label, "hyprmenu-app-name");
+  gtk_label_set_justify(GTK_LABEL(self->name_label), GTK_JUSTIFY_CENTER);
+  gtk_label_set_lines(GTK_LABEL(self->name_label), 1);
+  gtk_label_set_ellipsize(GTK_LABEL(self->name_label), PANGO_ELLIPSIZE_END);
+  gtk_label_set_max_width_chars(GTK_LABEL(self->name_label), 10);
+  gtk_widget_set_hexpand(self->name_label, TRUE);
+  gtk_widget_set_halign(self->name_label, GTK_ALIGN_CENTER);
+  gtk_widget_set_margin_top(self->name_label, 8);
+  gtk_box_append(GTK_BOX(box), self->name_label);
+  
+  return box;
+}
+
 static void
 hyprmenu_app_entry_init (HyprMenuAppEntry *self)
 {
@@ -73,32 +166,16 @@ hyprmenu_app_entry_init (HyprMenuAppEntry *self)
   self->is_grid_layout = FALSE;
   
   /* Create main box - horizontal for list view by default */
-  self->main_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
-  gtk_widget_add_css_class (self->main_box, "hyprmenu-app-entry");
-  gtk_widget_set_hexpand (self->main_box, TRUE);
-  
-  /* Create icon */
-  self->icon = gtk_image_new ();
-  gtk_widget_add_css_class (self->icon, "hyprmenu-app-icon");
-  gtk_widget_set_size_request (self->icon, 32, 32);
-  gtk_box_append (GTK_BOX (self->main_box), self->icon);
-  
-  /* Create name label */
-  self->name_label = gtk_label_new (NULL);
-  gtk_widget_add_css_class (self->name_label, "hyprmenu-app-name");
-  gtk_label_set_xalign (GTK_LABEL (self->name_label), 0);
-  gtk_label_set_yalign (GTK_LABEL (self->name_label), 0.5);
-  gtk_widget_set_hexpand (self->name_label, TRUE);
-  gtk_box_append (GTK_BOX (self->main_box), self->name_label);
+  self->main_box = create_list_layout(self);
   
   /* Add main box to self */
-  gtk_widget_set_parent (self->main_box, GTK_WIDGET (self));
+  gtk_widget_set_parent(self->main_box, GTK_WIDGET(self));
   
   /* Add click gesture */
-  GtkGesture *click_gesture = gtk_gesture_click_new ();
-  gtk_gesture_single_set_button (GTK_GESTURE_SINGLE (click_gesture), GDK_BUTTON_PRIMARY);
-  g_signal_connect (click_gesture, "pressed", G_CALLBACK (on_clicked), self);
-  gtk_widget_add_controller (GTK_WIDGET (self), GTK_EVENT_CONTROLLER (click_gesture));
+  GtkGesture *click_gesture = gtk_gesture_click_new();
+  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click_gesture), GDK_BUTTON_PRIMARY);
+  g_signal_connect(click_gesture, "pressed", G_CALLBACK(on_clicked), self);
+  gtk_widget_add_controller(GTK_WIDGET(self), GTK_EVENT_CONTROLLER(click_gesture));
 }
 
 static void
@@ -124,16 +201,11 @@ hyprmenu_app_entry_new (GDesktopAppInfo *app_info)
   }
 
   HyprMenuAppEntry *self = g_object_new (HYPRMENU_TYPE_APP_ENTRY, NULL);
-  g_print("app_entry_new: Creating entry for '%s'\n", app_name);
   
   /* Store app info */
   self->app_info = g_object_ref (app_info);
   self->app_id = g_strdup (g_app_info_get_id (G_APP_INFO (app_info)));
   self->app_name = g_strdup (app_name);
-  
-  g_print("app_entry_new: App ID: '%s', App name: '%s'\n", 
-         self->app_id ? self->app_id : "(null)", 
-         self->app_name ? self->app_name : "(null)");
   
   /* Get categories */
   self->categories = NULL;
@@ -156,31 +228,7 @@ hyprmenu_app_entry_new (GDesktopAppInfo *app_info)
     self->categories = g_strsplit("Other", ";", -1);
   }
   
-  /* Create button content */
-  GtkWidget *box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 8);
-  
-  /* Add app icon */
-  GtkWidget *icon = NULL;
-  
-  const char *icon_name = g_desktop_app_info_get_string (app_info, "Icon");
-  if (icon_name) {
-    icon = gtk_image_new_from_icon_name (icon_name);
-    gtk_image_set_pixel_size (GTK_IMAGE (icon), 24);
-  } else {
-    icon = gtk_image_new_from_icon_name ("application-x-executable");
-    gtk_image_set_pixel_size (GTK_IMAGE (icon), 24);
-  }
-  
-  gtk_box_append (GTK_BOX (box), icon);
-  
-  /* Add app name */
-  GtkWidget *label = gtk_label_new (self->app_name);
-  gtk_label_set_xalign (GTK_LABEL (label), 0);
-  gtk_widget_set_hexpand (label, TRUE);
-  gtk_box_append (GTK_BOX (box), label);
-  
-  /* Set button child */
-  gtk_button_set_child (GTK_BUTTON (self), box);
+  // Note: Icon and label text are now set directly in the layout functions
   
   return self;
 }
@@ -249,71 +297,18 @@ hyprmenu_app_entry_set_grid_layout (HyprMenuAppEntry *self, gboolean is_grid)
   /* Update flag */
   self->is_grid_layout = is_grid;
   
-  /* Remove existing children */
-  GtkWidget *old_box = self->main_box;
-  GtkOrientation orientation = is_grid ? GTK_ORIENTATION_VERTICAL : GTK_ORIENTATION_HORIZONTAL;
-  
-  /* Create new box with the correct orientation */
-  self->main_box = gtk_box_new(orientation, 8);
-  gtk_widget_add_css_class(self->main_box, "hyprmenu-app-entry");
-  
-  if (is_grid) {
-    /* Grid layout - add CSS class */
-    gtk_widget_add_css_class(self->main_box, "grid-item");
-    
-    /* Set size request for square shape */
-    gtk_widget_set_size_request(GTK_WIDGET(self), config->grid_item_size, config->grid_item_size);
-    gtk_widget_set_hexpand(GTK_WIDGET(self), FALSE);
-    gtk_widget_set_vexpand(GTK_WIDGET(self), FALSE);
-    
-    /* Center-align the items */
-    gtk_widget_set_halign(self->main_box, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(self->main_box, GTK_ALIGN_CENTER);
-    
-    /* Set icon size smaller for tile-like appearance */
-    gtk_image_set_pixel_size(GTK_IMAGE(self->icon), 32);
-    
-    /* Update label properties for grid view */
-    gtk_label_set_justify(GTK_LABEL(self->name_label), GTK_JUSTIFY_CENTER);
-    gtk_label_set_lines(GTK_LABEL(self->name_label), 2);
-    gtk_label_set_ellipsize(GTK_LABEL(self->name_label), PANGO_ELLIPSIZE_END);
-    gtk_label_set_max_width_chars(GTK_LABEL(self->name_label), 10);
-    gtk_widget_set_halign(self->name_label, GTK_ALIGN_CENTER);
-    gtk_widget_set_margin_top(self->name_label, 4);
-    
-    /* Center icon as well */
-    gtk_widget_set_halign(self->icon, GTK_ALIGN_CENTER);
-  } else {
-    /* List layout */
-    gtk_widget_remove_css_class(self->main_box, "grid-item");
-    
-    /* Reset size request */
-    gtk_widget_set_size_request(GTK_WIDGET(self), -1, -1);
-    
-    /* Reset icon size */
-    gtk_image_set_pixel_size(GTK_IMAGE(self->icon), 32);
-    
-    /* Reset label properties */
-    gtk_label_set_justify(GTK_LABEL(self->name_label), GTK_JUSTIFY_LEFT);
-    gtk_label_set_lines(GTK_LABEL(self->name_label), 1);
-    gtk_label_set_max_width_chars(GTK_LABEL(self->name_label), -1);
-    gtk_widget_set_halign(self->name_label, GTK_ALIGN_START);
+  /* Clear old children */
+  if (self->main_box) {
+    gtk_widget_unparent(self->main_box);
   }
   
-  /* Reparent icon and label to new box */
-  g_object_ref(self->icon);
-  g_object_ref(self->name_label);
+  /* Create appropriate layout */
+  if (is_grid) {
+    self->main_box = create_grid_layout(self);
+  } else {
+    self->main_box = create_list_layout(self);
+  }
   
-  gtk_box_remove(GTK_BOX(old_box), self->icon);
-  gtk_box_remove(GTK_BOX(old_box), self->name_label);
-  
-  gtk_box_append(GTK_BOX(self->main_box), self->icon);
-  gtk_box_append(GTK_BOX(self->main_box), self->name_label);
-  
-  g_object_unref(self->icon);
-  g_object_unref(self->name_label);
-  
-  /* Replace the old box with the new one */
-  gtk_widget_unparent(old_box);
+  /* Set parent */
   gtk_widget_set_parent(self->main_box, GTK_WIDGET(self));
 } 

@@ -433,10 +433,20 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
   if (config->use_grid_view) {
     GtkWidget *viewport = gtk_widget_get_parent(self->category_list);
     if (GTK_IS_VIEWPORT(viewport)) {
-      // Calculate viewport width based on grid items
-      // Use smaller spacing for a more compact tile appearance
-      int total_width = (config->grid_item_size + 8) * config->grid_columns + 24;
+      // Calculate exactly the required width for 4 tiles with spacing
+      int tile_size = 100;
+      int spacing = 8;
+      int margin = 12;
+      
+      // Calculate exact width needed: 4 tiles + 3 spacings + 2 margins
+      int total_width = (4 * tile_size) + (3 * spacing) + (2 * margin);
       gtk_widget_set_size_request(viewport, total_width, -1);
+      
+      // Also set parent window width to avoid extra space
+      GtkRoot *root = gtk_widget_get_root(GTK_WIDGET(self));
+      if (GTK_IS_WINDOW(root)) {
+        gtk_window_set_default_size(GTK_WINDOW(root), total_width + 2, -1);
+      }
     }
   } else {
     // Reset any size constraints

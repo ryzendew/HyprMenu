@@ -47,12 +47,13 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   gtk_flow_box_set_selection_mode(GTK_FLOW_BOX(self->all_apps_grid), GTK_SELECTION_NONE);
   gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), 4);
   
-  /* Disable homogeneous sizing - we'll control size in the items themselves */
+  /* Force items to their native size rather than trying to make them homogeneous */
   gtk_flow_box_set_homogeneous(GTK_FLOW_BOX(self->all_apps_grid), FALSE);
   
-  /* Set equal spacing for grid-like appearance */
+  /* Set spacing for grid-like appearance */
   gtk_flow_box_set_column_spacing(GTK_FLOW_BOX(self->all_apps_grid), 8);
   gtk_flow_box_set_row_spacing(GTK_FLOW_BOX(self->all_apps_grid), 8);
+  gtk_flow_box_set_activate_on_single_click(GTK_FLOW_BOX(self->all_apps_grid), TRUE);
   
   gtk_widget_add_css_class(self->all_apps_grid, "hyprmenu-app-grid");
   gtk_widget_set_visible(self->all_apps_grid, FALSE);  // Hide by default (list view is default)
