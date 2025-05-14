@@ -926,6 +926,28 @@ hyprmenu_config_apply_css()
     "  min-height: 1px;\n"
     "}\n\n");
 
+  // Pinned apps styles
+  g_string_append(css,
+    ".pinned-apps {\n"
+    "  background-color: rgba(40,40,50,0.4);\n"
+    "  border-radius: 8px;\n"
+    "  padding: 8px;\n"
+    "  margin: 4px 0;\n"
+    "}\n\n"
+    ".pinned-apps label {\n"
+    "  color: #ffffff;\n"
+    "  margin-bottom: 6px;\n"
+    "}\n\n"
+    ".menu-button {\n"
+    "  background-color: rgba(60,60,70,0.8);\n"
+    "  color: #ffffff;\n"
+    "  border-radius: 4px;\n"
+    "  padding: 6px 12px;\n"
+    "}\n\n"
+    ".menu-button:hover {\n"
+    "  background-color: rgba(80,80,90,0.9);\n"
+    "}\n\n");
+
   // Apply CSS
   GtkCssProvider *provider = gtk_css_provider_new();
   gtk_css_provider_load_from_string(provider, css->str);

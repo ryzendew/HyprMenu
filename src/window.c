@@ -6,6 +6,7 @@
 #include <gdk/wayland/gdkwayland.h>
 #include "app_grid.h"
 #include "recent_apps.h"
+#include "pinned_apps.h"
 
 // Add this struct definition at the top of the file, after the includes
 typedef struct {
@@ -642,6 +643,19 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_widget_set_margin_bottom(self->search_entry, search_extra_pad);
   gtk_box_append(GTK_BOX(self->main_box), self->search_entry);
 
+  // Pinned apps section
+  HyprMenuPinnedApps *pinned_apps = hyprmenu_pinned_apps_new();
+  self->pinned_apps = GTK_WIDGET(pinned_apps);
+  gtk_widget_add_css_class(self->pinned_apps, "hyprmenu-pinned-apps");
+  gtk_widget_set_margin_start(self->pinned_apps, config->window_padding);
+  gtk_widget_set_margin_end(self->pinned_apps, config->window_padding);
+  gtk_widget_set_margin_top(self->pinned_apps, 4);
+  gtk_widget_set_margin_bottom(self->pinned_apps, 4);
+  gtk_box_append(GTK_BOX(self->main_box), self->pinned_apps);
+  
+  // Initialize pinned apps display
+  hyprmenu_pinned_apps_refresh(pinned_apps);
+  
   // Recent apps section
   HyprMenuRecentApps *recent_apps = hyprmenu_recent_apps_new();
   self->recent_apps = GTK_WIDGET(recent_apps);
@@ -652,7 +666,7 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_widget_set_margin_bottom(self->recent_apps, 4);
   gtk_box_append(GTK_BOX(self->main_box), self->recent_apps);
   
-  // Refresh to load recent apps
+  // Initialize recent apps display
   hyprmenu_recent_apps_refresh(recent_apps);
   
   // Add a separator between recent apps and all apps
