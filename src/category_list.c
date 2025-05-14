@@ -125,8 +125,8 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   gtk_widget_set_hexpand (self->main_box, TRUE);
   gtk_widget_set_vexpand (self->main_box, TRUE);
   gtk_widget_set_halign (self->main_box, GTK_ALIGN_FILL);
-  gtk_widget_set_margin_start(self->main_box, 12);
-  gtk_widget_set_margin_end(self->main_box, 12);
+  gtk_widget_set_margin_start(self->main_box, 0);
+  gtk_widget_set_margin_end(self->main_box, 0);
   
   /* Add main box to self */
   gtk_widget_set_parent (self->main_box, GTK_WIDGET (self));
@@ -160,8 +160,8 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   gtk_widget_set_visible(self->all_apps_grid, FALSE);  // Hide by default (list view is default)
   gtk_widget_set_halign(self->all_apps_grid, GTK_ALIGN_CENTER);
   gtk_widget_set_hexpand(self->all_apps_grid, FALSE);
-  gtk_widget_set_margin_start(self->all_apps_grid, 12);
-  gtk_widget_set_margin_end(self->all_apps_grid, 12);
+  gtk_widget_set_margin_start(self->all_apps_grid, 0);
+  gtk_widget_set_margin_end(self->all_apps_grid, 0);
   gtk_widget_set_margin_top(self->all_apps_grid, 12);
   gtk_widget_set_margin_bottom(self->all_apps_grid, 12);
   

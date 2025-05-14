@@ -170,8 +170,8 @@ create_grid_layout(HyprMenuAppEntry *self)
   
   /* Set fixed size for the box */
   gtk_widget_set_size_request(box, 100, 100);
-  gtk_widget_set_margin_start(box, 2);
-  gtk_widget_set_margin_end(box, 2);
+  gtk_widget_set_margin_start(box, 0);
+  gtk_widget_set_margin_end(box, 0);
   gtk_widget_set_margin_top(box, 2);
   gtk_widget_set_margin_bottom(box, 2);
   
@@ -502,8 +502,8 @@ update_layout(HyprMenuAppEntry *self)
     GtkWidget *list_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
     gtk_widget_add_css_class(list_box, "hyprmenu-list-row");
     gtk_widget_set_hexpand(list_box, TRUE);
-    gtk_widget_set_margin_start(list_box, 4);
-    gtk_widget_set_margin_end(list_box, 4);
+    gtk_widget_set_margin_start(list_box, 0);
+    gtk_widget_set_margin_end(list_box, 0);
     gtk_widget_set_margin_top(list_box, 2);
     gtk_widget_set_margin_bottom(list_box, 2);
     
