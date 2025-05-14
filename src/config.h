@@ -24,117 +24,136 @@ typedef struct _HyprMenuConfig {
   HyprMenuPosition menu_position; // Position of the menu
   int bottom_offset; // Offset from bottom for dock/panel
   int top_offset;    // Offset from top for panel
-  
-  // Window style
-  double background_opacity;
-  double background_blur;
-  int corner_radius;
-  int border_width;
-  int border_corner_radius; // Border rounded corners
-  
-  // AGS-style effects
-  gboolean blur_enabled;
-  int blur_radius;
-  double blur_brightness;
-  double blur_contrast;
-  double blur_saturation;
-  double blur_noise;
-  gboolean blur_grayscale;
-  
-  // Transparency settings
-  gboolean transparency_enabled;
-  double transparency_alpha;
-  gboolean transparency_blur;
-  gboolean transparency_shadow;
-  char *transparency_shadow_color;
-  int transparency_shadow_radius;
-  
-  // Search entry style
+
+  // File paths
+  char *config_dir;
+  char *config_file;
+  char *css_file;
+
+  // Window options
+  int window_corner_radius;
+  int window_border_width;
+  char *window_border_color;
+  double window_background_opacity;
+  double window_background_blur;
+  char *window_background_color;
+  int window_padding;
+  char *window_halign;
+  char *window_valign;
+  char *window_shadow_color;
+  int window_shadow_radius;
+
+  // Inner border (main box)
+  int inner_border_width;
+  char *inner_border_color;
+  int inner_border_radius;
+
+  // Outer border (window)
+  int outer_border_width;
+  char *outer_border_color;
+  int outer_border_radius;
+
+  // Grid options
+  int grid_margin_start;
+  int grid_margin_end;
+  int grid_margin_top;
+  int grid_margin_bottom;
+  int grid_row_spacing;
+  int grid_column_spacing;
+  char *grid_halign;
+  char *grid_valign;
+  gboolean grid_hexpand;
+  gboolean grid_vexpand;
+  int grid_columns;
+  int grid_item_size;
+  int grid_item_corner_radius;
+  int grid_item_border_width;
+  char *grid_item_border_color;
+  char *grid_item_background_color;
+
+  // List options
+  int list_item_size;
+  int list_item_corner_radius;
+  int list_item_border_width;
+  char *list_item_border_color;
+  char *list_item_background_color;
+  int list_row_spacing;
+  char *list_halign;
+  char *list_valign;
+  gboolean list_hexpand;
+  gboolean list_vexpand;
+  int list_margin_start;
+  int list_margin_end;
+  int list_margin_top;
+  int list_margin_bottom;
+
+  // AppEntry options
+  int app_icon_size;
+  int app_icon_corner_radius;
+  char *app_icon_background_color;
+  int app_name_font_size;
+  char *app_name_color;
+  int app_desc_font_size;
+  char *app_desc_color;
+  int app_entry_padding;
+  char *app_entry_hover_color;
+  char *app_entry_active_color;
+
+  // Category options
+  char *category_background_color;
+  double category_background_opacity;
+  int category_corner_radius;
+  char *category_text_color;
+  int category_font_size;
+  char *category_font_family;
+  int category_padding;
+  gboolean category_show_separators;
+  char *category_separator_color;
+
+  // Search options
+  char *search_background_color;
   double search_background_opacity;
   int search_corner_radius;
+  char *search_text_color;
   int search_font_size;
   char *search_font_family;
   int search_padding;
   int search_min_height;
   int search_left_padding;
   int search_length;
-  
-  // App entry style
-  double app_entry_background_opacity;
-  int app_entry_corner_radius;
-  int app_entry_font_size;
-  char *app_entry_font_family;
-  int app_entry_padding;
-  int app_icon_size;
-  
-  // Category style
-  double category_background_opacity;
-  int category_corner_radius;
-  int category_font_size;
-  char *category_font_family;
-  int category_padding;
-  gboolean category_show_separators;
-  
-  // Behavior
+  char *search_placeholder_text;
+  int search_icon_size;
+  char *search_icon_color;
+  char *search_focus_border_color;
+  char *search_focus_shadow_color;
+
+  // SystemButton options
+  char *system_button_background_color;
+  char *system_button_icon_color;
+  char *system_button_hover_color;
+  char *system_button_active_color;
+  int system_button_corner_radius;
+  int system_button_size;
+  int system_button_spacing;
+
+  // Behavior options
   gboolean close_on_click_outside;
   gboolean close_on_super_key;
   gboolean close_on_app_launch;
   gboolean focus_search_on_open;
   int max_recent_apps;
-  
-  // File paths
-  char *config_dir;
-  char *config_file;
-  char *css_file;
-
+  gboolean close_on_escape;
   gboolean close_on_focus_out;
-  gchar *theme_path;
-  gchar *font_family;
-  gint font_size;
-  gchar *selected_color;
-  gint border_radius;
-  gint padding;
-  gint spacing;
-  gboolean show_icons;
-  gboolean show_descriptions;
   gboolean show_categories;
+  gboolean show_descriptions;
+  gboolean show_icons;
   gboolean show_search;
   gboolean show_scrollbar;
   gboolean show_border;
   gboolean show_shadow;
   gboolean blur_background;
-  gint blur_strength;
-  gdouble opacity;
-  
-  // View settings
-  gboolean use_grid_view;     // Use grid view instead of list view
-  int grid_columns;          // Number of columns in grid view
-  int grid_item_size;        // Size of grid items (square size in pixels)
-  int list_item_size;        // Height of items in list view
-
-  // --- User/pywal/ags color roles ---
-  char *background_color;
-  char *border_color;
-  char *search_background_color;
-  char *search_border_color;
-  char *search_text_color;
-  char *category_background_color;
-  char *category_text_color;
-  char *app_entry_background_color;
-  char *app_entry_border_color;
-  char *app_entry_text_color;
-  char *app_entry_icon_color;
-  char *system_button_background_color;
-  char *system_button_icon_color;
-  char *highlight_color;
-  char *separator_color;
-  char *scrollbar_color;
-  char *shadow_color;
-  // ---
-  gboolean use_pywal_colors;
-  gboolean use_ags_colors;
-
-  int menu_padding;
+  int blur_strength;
+  double opacity;
 } HyprMenuConfig;
 
 // Global config instance

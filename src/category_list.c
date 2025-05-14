@@ -136,11 +136,10 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   gtk_flow_box_set_selection_mode(GTK_FLOW_BOX(self->all_apps_grid), GTK_SELECTION_NONE);
   gtk_flow_box_set_max_children_per_line(GTK_FLOW_BOX(self->all_apps_grid), config->grid_columns);
   
-  // Calculate spacing based on grid item size for better proportions
-  int spacing = config->grid_item_size / 8;  // 1/8th of item size for spacing
+  // Use config values for spacing
   g_object_set(self->all_apps_grid, 
-    "row-spacing", spacing,
-    "column-spacing", spacing,
+    "row-spacing", config->grid_row_spacing,
+    "column-spacing", config->grid_column_spacing,
     NULL);
   
   /* Set up sorting for grid view */
@@ -152,18 +151,32 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   gtk_flow_box_set_homogeneous(GTK_FLOW_BOX(self->all_apps_grid), FALSE);
   
   /* Set spacing for grid-like appearance */
-  gtk_flow_box_set_column_spacing(GTK_FLOW_BOX(self->all_apps_grid), 8);
-  gtk_flow_box_set_row_spacing(GTK_FLOW_BOX(self->all_apps_grid), 8);
+  gtk_flow_box_set_column_spacing(GTK_FLOW_BOX(self->all_apps_grid), config->grid_column_spacing);
+  gtk_flow_box_set_row_spacing(GTK_FLOW_BOX(self->all_apps_grid), config->grid_row_spacing);
   gtk_flow_box_set_activate_on_single_click(GTK_FLOW_BOX(self->all_apps_grid), TRUE);
   
   gtk_widget_add_css_class(self->all_apps_grid, "hyprmenu-app-grid");
+  gtk_widget_set_hexpand(self->all_apps_grid, config->grid_hexpand);
+  gtk_widget_set_vexpand(self->all_apps_grid, config->grid_vexpand);
   gtk_widget_set_visible(self->all_apps_grid, FALSE);  // Hide by default (list view is default)
-  gtk_widget_set_halign(self->all_apps_grid, GTK_ALIGN_CENTER);
-  gtk_widget_set_hexpand(self->all_apps_grid, FALSE);
-  gtk_widget_set_margin_start(self->all_apps_grid, 12);
-  gtk_widget_set_margin_end(self->all_apps_grid, 12);
-  gtk_widget_set_margin_top(self->all_apps_grid, 12);
-  gtk_widget_set_margin_bottom(self->all_apps_grid, 12);
+  
+  // Set alignment from config
+  GtkAlign halign = GTK_ALIGN_CENTER;
+  GtkAlign valign = GTK_ALIGN_CENTER;
+  if (g_strcmp0(config->grid_halign, "fill") == 0) halign = GTK_ALIGN_FILL;
+  else if (g_strcmp0(config->grid_halign, "start") == 0) halign = GTK_ALIGN_START;
+  else if (g_strcmp0(config->grid_halign, "end") == 0) halign = GTK_ALIGN_END;
+  gtk_widget_set_halign(self->all_apps_grid, halign);
+  if (g_strcmp0(config->grid_valign, "fill") == 0) valign = GTK_ALIGN_FILL;
+  else if (g_strcmp0(config->grid_valign, "start") == 0) valign = GTK_ALIGN_START;
+  else if (g_strcmp0(config->grid_valign, "end") == 0) valign = GTK_ALIGN_END;
+  gtk_widget_set_valign(self->all_apps_grid, valign);
+  
+  // Set margins from config
+  gtk_widget_set_margin_start(self->all_apps_grid, config->grid_margin_start);
+  gtk_widget_set_margin_end(self->all_apps_grid, config->grid_margin_end);
+  gtk_widget_set_margin_top(self->all_apps_grid, config->grid_margin_top);
+  gtk_widget_set_margin_bottom(self->all_apps_grid, config->grid_margin_bottom);
   
   /* Initialize category hash table */
   self->category_boxes = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);

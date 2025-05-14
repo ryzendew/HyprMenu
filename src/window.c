@@ -111,12 +111,14 @@ on_key_press (GtkEventControllerKey *controller,
   
   // Close window on Escape key press
   if (keyval == GDK_KEY_Escape) {
-    GtkApplication *app = GTK_APPLICATION(gtk_window_get_application(GTK_WINDOW(self)));
-    gtk_window_close(GTK_WINDOW(self));
-    if (app) {
-      g_application_quit(G_APPLICATION(app));
+    if (config->close_on_escape) {
+      GtkApplication *app = GTK_APPLICATION(gtk_window_get_application(GTK_WINDOW(self)));
+      gtk_window_close(GTK_WINDOW(self));
+      if (app) {
+        g_application_quit(G_APPLICATION(app));
+      }
+      return TRUE;
     }
-    return TRUE;
   }
   
   // Close window on Super key press if configured
@@ -498,16 +500,9 @@ static void
 hyprmenu_window_init (HyprMenuWindow *self)
 {
   /* Set window properties */
-  gtk_window_set_decorated (GTK_WINDOW (self), FALSE);
-  gtk_window_set_resizable (GTK_WINDOW (self), TRUE);  // Allow resizing for proper grid view
-
-  int menu_width = config->window_width;
-  if (config->use_grid_view && (menu_width <= 0)) {
-    // Auto-calculate width: grid_columns * grid_item_size + padding
-    int padding = 48; // 24px left + 24px right, adjust as needed
-    menu_width = config->grid_columns * config->grid_item_size + padding;
-  }
-  gtk_window_set_default_size(GTK_WINDOW(self), menu_width, config->window_height);
+  gtk_window_set_default_size(GTK_WINDOW(self), config->window_width, config->window_height);
+  gtk_window_set_resizable(GTK_WINDOW(self), FALSE);
+  gtk_window_set_decorated(GTK_WINDOW(self), FALSE);
   
   /* Initialize layer shell */
   GdkDisplay *display = gtk_widget_get_display(GTK_WIDGET(self));
@@ -525,7 +520,7 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_layer_init_for_window(GTK_WINDOW(self));
   
   g_message("Setting layer shell properties");
-  gtk_layer_set_layer(GTK_WINDOW(self), GTK_LAYER_SHELL_LAYER_TOP);
+  gtk_layer_set_layer(GTK_WINDOW(self), GTK_LAYER_SHELL_LAYER_OVERLAY);
   gtk_layer_set_keyboard_mode(GTK_WINDOW(self), GTK_LAYER_SHELL_KEYBOARD_MODE_EXCLUSIVE);
   gtk_layer_set_exclusive_zone(GTK_WINDOW(self), -1);
   
@@ -541,7 +536,7 @@ hyprmenu_window_init (HyprMenuWindow *self)
       gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, FALSE);
       gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_BOTTOM, FALSE);
       gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, top_margin);
-      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, 2);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, config->left_margin);
       break;
     
     case POSITION_TOP_CENTER:
@@ -558,7 +553,7 @@ hyprmenu_window_init (HyprMenuWindow *self)
       gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, FALSE);
       gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_BOTTOM, FALSE);
       gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, top_margin);
-      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, 2);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, config->left_margin);
       break;
     
     case POSITION_BOTTOM_LEFT:
@@ -567,7 +562,7 @@ hyprmenu_window_init (HyprMenuWindow *self)
       gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, FALSE);
       gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, FALSE);
       gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_BOTTOM, bottom_margin);
-      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, 2);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, config->left_margin);
       break;
     
     case POSITION_BOTTOM_CENTER:
@@ -584,7 +579,7 @@ hyprmenu_window_init (HyprMenuWindow *self)
       gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, FALSE);
       gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, FALSE);
       gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_BOTTOM, bottom_margin);
-      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, 2);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, config->left_margin);
       break;
     
     case POSITION_CENTER:
@@ -602,7 +597,7 @@ hyprmenu_window_init (HyprMenuWindow *self)
       gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_RIGHT, FALSE);
       gtk_layer_set_anchor(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_BOTTOM, FALSE);
       gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_TOP, top_margin);
-      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, 2);
+      gtk_layer_set_margin(GTK_WINDOW(self), GTK_LAYER_SHELL_EDGE_LEFT, config->left_margin);
       break;
   }
   
@@ -611,10 +606,10 @@ hyprmenu_window_init (HyprMenuWindow *self)
   
   /* Create main container (vertical box) */
   GtkWidget *v_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-  gtk_widget_set_margin_start(v_box, config->menu_padding);
-  gtk_widget_set_margin_end(v_box, config->menu_padding);
-  gtk_widget_set_margin_top(v_box, config->menu_padding);
-  gtk_widget_set_margin_bottom(v_box, config->menu_padding);
+  gtk_widget_set_margin_start(v_box, config->window_padding);
+  gtk_widget_set_margin_end(v_box, config->window_padding);
+  gtk_widget_set_margin_top(v_box, config->window_padding);
+  gtk_widget_set_margin_bottom(v_box, config->window_padding);
   gtk_widget_set_hexpand(v_box, TRUE);
   gtk_widget_set_vexpand(v_box, TRUE);
   gtk_widget_set_halign(v_box, GTK_ALIGN_FILL);
@@ -641,8 +636,8 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_widget_set_hexpand(self->search_entry, TRUE);
   gtk_widget_set_halign(self->search_entry, GTK_ALIGN_FILL);
   int search_extra_pad = 8;
-  gtk_widget_set_margin_start(self->search_entry, config->menu_padding + search_extra_pad);
-  gtk_widget_set_margin_end(self->search_entry, config->menu_padding + search_extra_pad);
+  gtk_widget_set_margin_start(self->search_entry, config->window_padding + search_extra_pad);
+  gtk_widget_set_margin_end(self->search_entry, config->window_padding + search_extra_pad);
   gtk_widget_set_margin_top(self->search_entry, search_extra_pad);
   gtk_widget_set_margin_bottom(self->search_entry, search_extra_pad);
   gtk_box_append(GTK_BOX(self->main_box), self->search_entry);
@@ -656,7 +651,7 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_box_append(GTK_BOX(self->main_box), self->app_grid);
   
   // Set grid columns if in grid view
-  if (config->use_grid_view) {
+  if (config->grid_hexpand) {
     GtkWidget *category_list = NULL;
     GObject *grid_obj = NULL;
     // Try to get the category list from the app_grid

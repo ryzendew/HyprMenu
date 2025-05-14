@@ -84,7 +84,7 @@ static void
 on_toggle_view_clicked(GtkButton *button, gpointer user_data)
 {
   HyprMenuAppGrid *self = HYPRMENU_APP_GRID(user_data);
-  g_print("Toggle button clicked! Current mode: %s\n", config->use_grid_view ? "grid" : "list");
+  g_print("Toggle button clicked! Current mode: %s\n", config->grid_hexpand ? "grid" : "list");
   hyprmenu_app_grid_toggle_view(self);
 }
 
@@ -121,10 +121,10 @@ hyprmenu_app_grid_init (HyprMenuAppGrid *self)
   
   /* Create toggle button */
   self->toggle_button = gtk_button_new_from_icon_name(
-    config->use_grid_view ? "view-list-symbolic" : "view-grid-symbolic");
+    config->grid_hexpand ? "view-list-symbolic" : "view-grid-symbolic");
   gtk_widget_add_css_class(self->toggle_button, "flat");
   gtk_widget_set_tooltip_text(self->toggle_button, 
-    config->use_grid_view ? "Switch to List View" : "Switch to Grid View");
+    config->grid_hexpand ? "Switch to List View" : "Switch to Grid View");
   
   // Make toggle button more visible with a distinct icon size
   GtkWidget *icon = gtk_button_get_child(GTK_BUTTON(self->toggle_button));
@@ -134,8 +134,8 @@ hyprmenu_app_grid_init (HyprMenuAppGrid *self)
   
   g_signal_connect(self->toggle_button, "clicked", G_CALLBACK(on_toggle_view_clicked), self);
   g_print("Toggle button created with icon %s for mode: %s\n", 
-          config->use_grid_view ? "view-list-symbolic" : "view-grid-symbolic",
-          config->use_grid_view ? "grid" : "list");
+          config->grid_hexpand ? "view-list-symbolic" : "view-grid-symbolic",
+          config->grid_hexpand ? "grid" : "list");
   
   /* Create scrolled window */
   self->scrolled_window = gtk_scrolled_window_new ();
@@ -152,7 +152,7 @@ hyprmenu_app_grid_init (HyprMenuAppGrid *self)
   self->list_view = hyprmenu_list_view_new();
   
   /* Set initial view based on config */
-  if (config->use_grid_view) {
+  if (config->grid_hexpand) {
     self->current_view = self->category_list;
     hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), TRUE);
   } else {
@@ -299,16 +299,16 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
 {
   g_return_if_fail(HYPRMENU_IS_APP_GRID(self));
   
-  gboolean old_mode = config->use_grid_view;
+  gboolean old_mode = config->grid_hexpand;
   
   g_print("Toggle view button clicked - changing from %s to %s\n", 
           old_mode ? "grid" : "list", 
           !old_mode ? "grid" : "list");
   
   /* Update config */
-  config->use_grid_view = !config->use_grid_view;
+  config->grid_hexpand = !config->grid_hexpand;
   
-  g_print("Config updated: use_grid_view now = %s\n", config->use_grid_view ? "true" : "false");
+  g_print("Config updated: grid_hexpand now = %s\n", config->grid_hexpand ? "true" : "false");
   
   /* Save configuration immediately */
   GError *error = NULL;
@@ -318,24 +318,24 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
     g_clear_error(&error);
   } else {
     g_print("Configuration saved successfully with view mode: %s\n", 
-            config->use_grid_view ? "grid" : "list");
+            config->grid_hexpand ? "grid" : "list");
     
     // Make absolutely sure changes are written to disk
     fsync(0);  // Use fsync on stdout instead of sync()
   }
   
   /* Verify the config value was actually changed */
-  g_print("Double-checking config->use_grid_view = %s\n", config->use_grid_view ? "true" : "false");
+  g_print("Double-checking config->grid_hexpand = %s\n", config->grid_hexpand ? "true" : "false");
   
   /* Update toggle button */
   gtk_button_set_icon_name(GTK_BUTTON(self->toggle_button),
-                          config->use_grid_view ? "view-list-symbolic" : "view-grid-symbolic");
+                          config->grid_hexpand ? "view-list-symbolic" : "view-grid-symbolic");
   gtk_widget_set_tooltip_text(self->toggle_button,
-                             config->use_grid_view ? "Switch to List View" : "Switch to Grid View");
+                             config->grid_hexpand ? "Switch to List View" : "Switch to Grid View");
   
   /* Switch views */
   GtkWidget *new_view;
-  if (config->use_grid_view) {
+  if (config->grid_hexpand) {
     g_print("Setting view to grid\n");
     new_view = self->category_list;
     hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), TRUE);
@@ -343,7 +343,7 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
     // Validate list view before switching
     if (!hyprmenu_list_view_is_valid(HYPRMENU_LIST_VIEW(self->list_view))) {
       g_warning("List view is not valid, falling back to grid view");
-      config->use_grid_view = TRUE;
+      config->grid_hexpand = TRUE;
       new_view = self->category_list;
       hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), TRUE);
       

@@ -224,8 +224,8 @@ create_app_entry(HyprMenuListView* self, GDesktopAppInfo* app_info)
     
     // Calculate scaling for font sizes
     double scale = (double)config->list_item_size / 48.0;
-    int name_font_size = (int)(config->app_entry_font_size * scale);
-    int desc_font_size = (int)((config->app_entry_font_size - 2) * scale);
+    int name_font_size = (int)(config->app_name_font_size * scale);
+    int desc_font_size = (int)(config->app_desc_font_size * scale);
     if (desc_font_size < 8) desc_font_size = 8;
     if (name_font_size < 8) name_font_size = 8;
     

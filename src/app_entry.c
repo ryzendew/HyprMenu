@@ -169,7 +169,7 @@ create_grid_layout(HyprMenuAppEntry *self)
   gtk_widget_add_css_class(box, "grid-item");
   
   /* Set fixed size for the box */
-  gtk_widget_set_size_request(box, 100, 100);
+  gtk_widget_set_size_request(box, config->grid_item_size, config->grid_item_size);
   gtk_widget_set_margin_start(box, 2);
   gtk_widget_set_margin_end(box, 2);
   gtk_widget_set_margin_top(box, 2);
@@ -187,7 +187,7 @@ create_grid_layout(HyprMenuAppEntry *self)
   /* DIRECT ICON APPROACH - similar to list view */
   // Create the icon - use a built-in gtk icon first for guaranteed visibility
   GtkWidget *icon = gtk_image_new_from_icon_name("application-x-executable");
-  gtk_image_set_pixel_size(GTK_IMAGE(icon), 42); // Larger icon for grid view
+  gtk_image_set_pixel_size(GTK_IMAGE(icon), config->app_icon_size); // Use configured icon size
   gtk_box_append(GTK_BOX(icon_box), icon);
   
   // Try to replace with actual app icon if available
@@ -440,123 +440,19 @@ hyprmenu_app_entry_set_icon_size(HyprMenuAppEntry *self, int size)
 static void
 update_layout(HyprMenuAppEntry *self)
 {
-  if (!self->main_box) return;
-  
-  // Remove all children from the main_box
-  GtkWidget *child;
-  while ((child = gtk_widget_get_first_child(self->main_box))) {
-    gtk_box_remove(GTK_BOX(self->main_box), child);
-  }
-  
-  if (config->use_grid_view) {
-    // Grid view layout
-    GtkWidget *grid_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
-    gtk_widget_add_css_class(grid_box, "grid-item");
-    gtk_widget_set_halign(grid_box, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(grid_box, GTK_ALIGN_CENTER);
-    
-    // Set size for grid items
-    gtk_widget_set_size_request(grid_box, config->grid_item_size, config->grid_item_size);
-    
-    // Create icon box
-    GtkWidget *icon_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_set_halign(icon_box, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(icon_box, GTK_ALIGN_CENTER);
-    gtk_box_append(GTK_BOX(grid_box), icon_box);
-    
-    // Set icon size to 60% of grid item size
-    int icon_size = config->grid_item_size * 0.6;
-    gtk_widget_set_size_request(icon_box, icon_size, icon_size);
-    
-    // Create and set icon
-    GtkWidget *icon = gtk_image_new_from_icon_name("application-x-executable");
-    gtk_image_set_pixel_size(GTK_IMAGE(icon), icon_size * 0.8);
-    gtk_box_append(GTK_BOX(icon_box), icon);
-    
-    // Try to set actual app icon
-    if (self->app_info) {
-      GIcon *app_icon = g_app_info_get_icon(G_APP_INFO(self->app_info));
-      if (app_icon) {
-        gtk_image_set_from_gicon(GTK_IMAGE(icon), app_icon);
-      }
-    }
-    
-    self->icon = icon;
-    
-    // Create name label
-    GtkWidget *name_label = gtk_label_new(self->app_name ? self->app_name : "Unknown");
-    gtk_label_set_wrap(GTK_LABEL(name_label), TRUE);
-    gtk_label_set_wrap_mode(GTK_LABEL(name_label), PANGO_WRAP_WORD);
-    gtk_label_set_justify(GTK_LABEL(name_label), GTK_JUSTIFY_CENTER);
-    gtk_widget_set_halign(name_label, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(name_label, GTK_ALIGN_CENTER);
-    gtk_widget_set_margin_start(name_label, 4);
-    gtk_widget_set_margin_end(name_label, 4);
-    gtk_box_append(GTK_BOX(grid_box), name_label);
-    
-    self->name_label = name_label;
-    gtk_box_append(GTK_BOX(self->main_box), grid_box);
-    
+  if (config->grid_hexpand) {
+    // Create grid layout
+    GtkWidget *new_box = create_grid_layout(self);
+    gtk_widget_set_parent(new_box, GTK_WIDGET(self));
+    gtk_widget_unparent(self->main_box);
+    self->main_box = new_box;
+    self->is_grid_layout = TRUE;
   } else {
-    // List view layout
-    GtkWidget *list_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
-    gtk_widget_add_css_class(list_box, "hyprmenu-list-row");
-    gtk_widget_set_hexpand(list_box, TRUE);
-    gtk_widget_set_margin_start(list_box, 4);
-    gtk_widget_set_margin_end(list_box, 4);
-    gtk_widget_set_margin_top(list_box, 2);
-    gtk_widget_set_margin_bottom(list_box, 2);
-    
-    // Set list item height and ensure vertical centering
-    gtk_widget_set_size_request(list_box, -1, config->list_item_size);
-    gtk_widget_set_valign(list_box, GTK_ALIGN_CENTER);
-    
-    // Create icon box
-    GtkWidget *icon_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_set_halign(icon_box, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign(icon_box, GTK_ALIGN_CENTER);
-    
-    // Set icon size to 75% of list item height
-    int icon_size = config->list_item_size * 0.75;
-    gtk_widget_set_size_request(icon_box, icon_size, icon_size);
-    gtk_box_append(GTK_BOX(list_box), icon_box);
-    
-    // Create and set icon
-    GtkWidget *icon = gtk_image_new_from_icon_name("application-x-executable");
-    gtk_image_set_pixel_size(GTK_IMAGE(icon), icon_size * 0.8);
-    gtk_widget_set_margin_start(icon, 4);
-    gtk_widget_set_margin_end(icon, 4);
-    gtk_box_append(GTK_BOX(icon_box), icon);
-    
-    // Try to set actual app icon
-    if (self->app_info) {
-      GIcon *app_icon = g_app_info_get_icon(G_APP_INFO(self->app_info));
-      if (app_icon) {
-        gtk_image_set_from_gicon(GTK_IMAGE(icon), app_icon);
-      }
-    }
-    
-    self->icon = icon;
-    
-    // Create label box
-    GtkWidget *label_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_set_hexpand(label_box, TRUE);
-    gtk_widget_set_valign(label_box, GTK_ALIGN_CENTER);
-    gtk_box_append(GTK_BOX(list_box), label_box);
-    
-    // Create name label with larger font
-    GtkWidget *name_label = gtk_label_new(NULL);
-    char *markup = g_markup_printf_escaped("<span weight='bold' size='large'>%s</span>", 
-                                          self->app_name ? self->app_name : "Unknown");
-    gtk_label_set_markup(GTK_LABEL(name_label), markup);
-    g_free(markup);
-    
-    gtk_label_set_xalign(GTK_LABEL(name_label), 0);
-    gtk_widget_set_hexpand(name_label, TRUE);
-    gtk_widget_set_valign(name_label, GTK_ALIGN_CENTER);
-    gtk_box_append(GTK_BOX(label_box), name_label);
-    
-    self->name_label = name_label;
-    gtk_box_append(GTK_BOX(self->main_box), list_box);
+    // Create list layout
+    GtkWidget *new_box = create_list_layout(self);
+    gtk_widget_set_parent(new_box, GTK_WIDGET(self));
+    gtk_widget_unparent(self->main_box);
+    self->main_box = new_box;
+    self->is_grid_layout = FALSE;
   }
 }

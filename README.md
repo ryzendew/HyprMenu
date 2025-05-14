@@ -1,16 +1,89 @@
 # HyprMenu
 
-A modern application launcher for Hyprland, built with GTK4 and GTK Layer Shell.
+A highly customizable, modern application launcher for Wayland compositors (Hyprland, Sway, etc.)
 
-![image](https://github.com/user-attachments/assets/1beff4e7-e30a-4bf0-bb71-750691c8d09b)
+## Features
+- **Fully customizable appearance** via `hyprmenu.conf`
+- **Outer and inner borders**: independently style the menu's outer and inner borders
+- **Grid and list views**: switchable, with configurable columns, spacing, and item size
+- **Flat, icon-only system buttons** (power, lock, etc.)
+- **Alphabetically organized config** for easy navigation
+- **Per-section options** for Window, Grid, List, AppEntry, Category, Search, SystemButton, Behavior, Style, Layout
+- **Live reload**: changes to config are applied instantly
+- **Dark mode** and transparency support
+- **Extensive color and spacing options**
 
+## Configuration
+All options are set in `~/.config/hyprmenu/hyprmenu.conf`. Sections and keys are alphabetical for clarity.
 
-![image](https://github.com/user-attachments/assets/913c0183-eab6-4e7d-b8fa-e3bfc295bfbc)
+### Example: Borders
+```ini
+[Window]
+outer_border_width=3
+outer_border_color=#888888
+outer_border_radius=16
+inner_border_width=2
+inner_border_color=#444444
+inner_border_radius=12
+```
 
+### Major Sections and Options
+- **[Window]**: Outer/inner borders, background, padding, shadow, alignment
+- **[Grid]**: Grid columns, item size, spacing, margins, alignment
+- **[List]**: List item size, spacing, margins, alignment
+- **[AppEntry]**: Icon size, font sizes, colors, padding, hover/active colors
+- **[Category]**: Background, text color, font, padding, separators
+- **[Search]**: Bar color, font, padding, icon, placeholder, focus border
+- **[SystemButton]**: Icon color, hover/active color, size, spacing, flat style
+- **[Behavior]**: Close on click, super key, app launch, focus, recent apps, show/hide UI elements
+- **[Style]**: Global background, blur, transparency, AGS effects
+- **[Layout]**: Window size, margins, position, offsets
 
-![image](https://github.com/user-attachments/assets/0c7de1d8-dab3-4eeb-a84e-c279d3155e39)
+### System Buttons: Flat/Icon-Only
+System buttons are styled to be flat and icon-only by default. You can further customize their color and hover effect in the `[SystemButton]` section.
 
+### Example Config Snippet
+```ini
+[Window]
+outer_border_width=3
+outer_border_color=#888888
+outer_border_radius=16
+inner_border_width=2
+inner_border_color=#444444
+inner_border_radius=12
+background_opacity=0.85
+background_blur=5.0
+shadow_color=rgba(0,0,0,0.3)
+shadow_radius=20
 
+[Grid]
+grid_columns=5
+grid_item_size=100
+row_spacing=12
+column_spacing=12
+
+[SystemButton]
+icon_color=#fff
+hover_color=rgba(255,255,255,0.08)
+background_color=transparent
+corner_radius=0
+```
+
+## Customization Tips
+- **Change border colors/thickness**: Edit `outer_border_*` and `inner_border_*` in `[Window]`.
+- **Switch between grid/list**: Use the toggle button or set defaults in `[Grid]`/`[List]`.
+- **Make system buttons flat**: Use the default config or set `background_color=transparent` and `corner_radius=0` in `[SystemButton]`.
+- **Adjust spacing and padding**: All major sections have `padding`, `margin`, or `spacing` options.
+- **Colors**: All color values support hex, rgb(), or rgba().
+
+## Getting Started
+1. Copy or generate a config: `~/.config/hyprmenu/hyprmenu.conf`
+2. Edit the config to your liking (see above for options)
+3. Run HyprMenu and enjoy your custom launcher!
+
+---
+
+For more details, see the comments in the config file or open an issue for help.
 
 ## Requirements
 
@@ -49,65 +122,6 @@ sudo ./build.sh --install
 ## Installation
 
 After building, the application will be installed automatically.
-
-## Configuration
-
-The menu can be positioned in various locations:
-- Top Left
-- Top Center
-- Top Right
-- Bottom Left
-- Bottom Center
-- Bottom Right
-- Center
-
-### Color Theming & Auto-Color Support
-
-- All color values support `#RRGGBB`, `#RRGGBBAA`, `rgb()`, or `rgba()` formats.
-- You can use the color picker in VSCode or any compatible editor!
-- To use pywal or AGS colors, set `use_pywal_colors=true` or `use_ags_colors=true` in the `[Style]` section.
-- Any color can be overridden manually in the config.
-
-### Grid and List View Customization
-
-- `use_grid_view` (true/false): Switch between grid and list view.
-- `grid_columns`: Number of app columns in grid view. Menu width auto-adjusts unless `window_width` is set.
-- `grid_item_size`: Size of grid items (square size in pixels).
-- `list_item_size`: Height of items in list view (pixels).
-
-### Example `[View]` Section
-```ini
-[View]
-use_grid_view = false
-list_item_size = 48
-# For grid view:
-grid_columns = 4
-grid_item_size = 100
-```
-
-### Example `[Style]` Section (Color Roles)
-```ini
-[Style]
-background_color = #181825
-border_color = #444444
-search_background_color = #22223b
-search_text_color = #cdd6f4
-category_background_color = #1e1e2e
-category_text_color = #f5e0dc
-app_entry_background_color = #313244
-app_entry_text_color = #cdd6f4
-highlight_color = #f38ba8
-separator_color = #585b70
-scrollbar_color = #6c7086
-shadow_color = #00000080
-system_button_icon_color = rgba(0, 0, 0, 0.3)
-use_pywal_colors = true
-use_ags_colors = false
-```
-
-### All Options Are Auto-Generated
-- When you update HyprMenu, your config will be auto-updated to include all new options and documentation comments.
-- No manual migration needed!
 
 ## License
 
