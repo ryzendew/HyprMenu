@@ -1,6 +1,7 @@
 #include "app_entry.h"
 #include "config.h"
 #include "recent_apps.h"
+#include "window.h"
 
 struct _HyprMenuAppEntry
 {
@@ -29,6 +30,18 @@ launch_application (GDesktopAppInfo *app_info, GtkWidget *widget)
   if (!g_app_info_launch (G_APP_INFO (app_info), NULL, NULL, &error)) {
     g_warning ("Failed to launch application: %s", error->message);
     g_error_free (error);
+    return;
+  }
+  
+  // Add to recent apps
+  GtkRoot *root = gtk_widget_get_root (widget);
+  if (GTK_IS_WINDOW (root)) {
+    const char *app_id = g_app_info_get_id (G_APP_INFO (app_info));
+    HyprMenuWindow *window = HYPRMENU_WINDOW(root);
+    if (app_id && window && window->recent_apps) {
+      HyprMenuRecentApps *recent_apps = HYPRMENU_RECENT_APPS(window->recent_apps);
+      hyprmenu_recent_apps_add_app(recent_apps, app_id);
+    }
   }
   
   // Close the window if configured to do so

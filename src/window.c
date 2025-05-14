@@ -642,6 +642,28 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_widget_set_margin_bottom(self->search_entry, search_extra_pad);
   gtk_box_append(GTK_BOX(self->main_box), self->search_entry);
 
+  // Recent apps section
+  HyprMenuRecentApps *recent_apps = hyprmenu_recent_apps_new();
+  self->recent_apps = GTK_WIDGET(recent_apps);
+  gtk_widget_add_css_class(self->recent_apps, "hyprmenu-recent-apps");
+  gtk_widget_set_margin_start(self->recent_apps, config->window_padding);
+  gtk_widget_set_margin_end(self->recent_apps, config->window_padding);
+  gtk_widget_set_margin_top(self->recent_apps, 4);
+  gtk_widget_set_margin_bottom(self->recent_apps, 4);
+  gtk_box_append(GTK_BOX(self->main_box), self->recent_apps);
+  
+  // Refresh to load recent apps
+  hyprmenu_recent_apps_refresh(recent_apps);
+  
+  // Add a separator between recent apps and all apps
+  GtkWidget *separator = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+  gtk_widget_add_css_class(separator, "hyprmenu-separator");
+  gtk_widget_set_margin_start(separator, config->window_padding);
+  gtk_widget_set_margin_end(separator, config->window_padding);
+  gtk_widget_set_margin_top(separator, 2);
+  gtk_widget_set_margin_bottom(separator, 6);
+  gtk_box_append(GTK_BOX(self->main_box), separator);
+
   // App grid
   self->app_grid = GTK_WIDGET(hyprmenu_app_grid_new());
   gtk_widget_add_css_class(self->app_grid, "hyprmenu-app-grid");

@@ -1,7 +1,7 @@
 #include "recent_apps.h"
 #include "app_entry.h"
+#include "config.h"
 
-#define MAX_RECENT_APPS 6
 #define RECENT_APPS_FILE ".config/hyprmenu/recent.txt"
 
 struct _HyprMenuRecentApps
@@ -34,7 +34,7 @@ load_recent_apps (HyprMenuRecentApps *self)
       
       for (int i = 0; lines[i] != NULL && lines[i][0] != '\0'; i++) {
         /* Limit number of recent apps */
-        if (g_list_length (self->recent_ids) >= MAX_RECENT_APPS)
+        if (g_list_length (self->recent_ids) >= config->max_recent_apps)
           break;
           
         self->recent_ids = g_list_append (self->recent_ids, g_strdup (lines[i]));
@@ -91,7 +91,7 @@ hyprmenu_recent_apps_init (HyprMenuRecentApps *self)
   
   /* Create label */
   self->label = gtk_label_new (NULL);
-  gtk_label_set_markup (GTK_LABEL (self->label), "<b>Recent Applications</b>");
+  gtk_label_set_markup (GTK_LABEL (self->label), "<b>Most Used Apps</b>");
   gtk_widget_set_halign (self->label, GTK_ALIGN_START);
   gtk_widget_set_margin_bottom (self->label, 6);
   gtk_box_append (GTK_BOX (self), self->label);
@@ -99,7 +99,7 @@ hyprmenu_recent_apps_init (HyprMenuRecentApps *self)
   /* Create apps box */
   self->apps_box = gtk_flow_box_new ();
   gtk_flow_box_set_selection_mode (GTK_FLOW_BOX (self->apps_box), GTK_SELECTION_NONE);
-  gtk_flow_box_set_max_children_per_line (GTK_FLOW_BOX (self->apps_box), 6);
+  gtk_flow_box_set_max_children_per_line (GTK_FLOW_BOX (self->apps_box), config->grid_columns);
   gtk_flow_box_set_homogeneous (GTK_FLOW_BOX (self->apps_box), TRUE);
   gtk_box_append (GTK_BOX (self), self->apps_box);
   
@@ -138,7 +138,15 @@ hyprmenu_recent_apps_refresh (HyprMenuRecentApps *self)
     
     if (app_info) {
       HyprMenuAppEntry *entry = hyprmenu_app_entry_new (app_info);
-      gtk_flow_box_append (GTK_FLOW_BOX (self->apps_box), GTK_WIDGET (entry));
+      if (entry) {
+        // Set grid layout based on config
+        hyprmenu_app_entry_set_grid_layout (entry, config->grid_hexpand);
+        // Set icon size proportional to grid item size
+        if (config->grid_hexpand) {
+          hyprmenu_app_entry_set_icon_size (entry, config->grid_item_size * 0.6);
+        }
+        gtk_flow_box_append (GTK_FLOW_BOX (self->apps_box), GTK_WIDGET (entry));
+      }
       g_object_unref (app_info);
     }
   }
@@ -165,7 +173,7 @@ hyprmenu_recent_apps_add_app (HyprMenuRecentApps *self, const char *app_id)
   self->recent_ids = g_list_prepend (self->recent_ids, g_strdup (app_id));
   
   /* Trim list if needed */
-  while (g_list_length (self->recent_ids) > MAX_RECENT_APPS) {
+  while (g_list_length (self->recent_ids) > config->max_recent_apps) {
     GList *last = g_list_last (self->recent_ids);
     g_free (last->data);
     self->recent_ids = g_list_delete_link (self->recent_ids, last);

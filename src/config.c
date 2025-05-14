@@ -907,6 +907,25 @@ hyprmenu_config_apply_css()
     "  background: rgba(255,255,255,0.08);\n"
     "}\n\n");
 
+  // Recent apps styles
+  g_string_append(css,
+    ".recent-apps {\n"
+    "  background-color: rgba(40,40,50,0.4);\n"
+    "  border-radius: 8px;\n"
+    "  padding: 8px;\n"
+    "  margin: 4px 0;\n"
+    "}\n\n"
+    ".recent-apps label {\n"
+    "  color: #ffffff;\n"
+    "  font-size: 14px;\n"
+    "  font-weight: bold;\n"
+    "  margin-bottom: 6px;\n"
+    "}\n\n"
+    ".hyprmenu-separator {\n"
+    "  background-color: rgba(255,255,255,0.15);\n"
+    "  min-height: 1px;\n"
+    "}\n\n");
+
   // Apply CSS
   GtkCssProvider *provider = gtk_css_provider_new();
   gtk_css_provider_load_from_string(provider, css->str);
