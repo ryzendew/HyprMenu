@@ -24,7 +24,7 @@ typedef struct _HyprMenuConfig {
   HyprMenuPosition menu_position; // Position of the menu
   int bottom_offset; // Offset from bottom for dock/panel
   int top_offset;    // Offset from top for panel
-
+  
   // File paths
   char *config_dir;
   char *config_file;
@@ -86,7 +86,7 @@ typedef struct _HyprMenuConfig {
   int list_margin_end;
   int list_margin_top;
   int list_margin_bottom;
-
+  
   // AppEntry options
   int app_icon_size;
   int app_icon_corner_radius;
@@ -98,7 +98,7 @@ typedef struct _HyprMenuConfig {
   int app_entry_padding;
   char *app_entry_hover_color;
   char *app_entry_active_color;
-
+  
   // Category options
   char *category_background_color;
   double category_background_opacity;
@@ -109,7 +109,7 @@ typedef struct _HyprMenuConfig {
   int category_padding;
   gboolean category_show_separators;
   char *category_separator_color;
-
+  
   // Search options
   char *search_background_color;
   double search_background_opacity;
@@ -154,6 +154,10 @@ typedef struct _HyprMenuConfig {
   gboolean blur_background;
   int blur_strength;
   double opacity;
+  
+  // Section titles
+  char *recent_apps_title;
+  char *pinned_apps_title;
 } HyprMenuConfig;
 
 // Global config instance

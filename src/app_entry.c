@@ -104,7 +104,7 @@ on_pin_app_clicked(GtkButton *button, gpointer user_data)
       g_warning("PIN ERROR: Could not create file with fopen: %s", g_strerror(errno));
       
       // Try with g_file_set_contents
-      GError *error = NULL;
+  GError *error = NULL;
       if (g_file_set_contents(pinned_file, "", 0, &error)) {
         file_created = TRUE;
         g_print("PIN DEBUG: Created empty pinned.txt file with g_file_set_contents\n");
@@ -496,7 +496,22 @@ on_clicked(GtkGestureClick *gesture,
   (void)x;
   (void)y;
   
+  g_print("DEBUG: on_clicked() handler called\n");
+  
   HyprMenuAppEntry *self = HYPRMENU_APP_ENTRY(user_data);
+  
+  if (!self) {
+    g_warning("LAUNCH ERROR: App entry is NULL in on_clicked");
+    return;
+  }
+  
+  if (!self->app_info) {
+    g_warning("LAUNCH ERROR: App info is NULL for entry %s", 
+              self->app_name ? self->app_name : "(unknown)");
+    return;
+  }
+  
+  g_print("DEBUG: Launching application: %s\n", self->app_name ? self->app_name : "(unknown)");
   
   // Launch the application
   launch_application(self->app_info, GTK_WIDGET(self));
@@ -721,15 +736,23 @@ hyprmenu_app_entry_init (HyprMenuAppEntry *self)
   
   g_print("INIT: Adding click gestures\n");
   
+  /* Make sure button is clickable */
+  gtk_widget_set_can_focus(GTK_WIDGET(self), TRUE);
+  gtk_widget_set_focusable(GTK_WIDGET(self), TRUE);
+  
   /* Add left-click gesture */
   GtkGesture *left_click = gtk_gesture_click_new();
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(left_click), GDK_BUTTON_PRIMARY);
   g_signal_connect(left_click, "released", G_CALLBACK(on_clicked), self);
+  g_signal_connect(left_click, "pressed", G_CALLBACK(on_clicked), self);  // Try both signals
   gtk_widget_add_controller(GTK_WIDGET(self), GTK_EVENT_CONTROLLER(left_click));
+  
+  /* Connect the clicked signal for GtkButton base class functionality */
+  g_signal_connect(self, "clicked", G_CALLBACK(on_clicked), self);
   
   /* Add right-click gesture */
   GtkGesture *right_click = gtk_gesture_click_new();
-  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(right_click), GDK_BUTTON_SECONDARY); 
+  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(right_click), GDK_BUTTON_SECONDARY);
   
   /* Connect to both released and pressed signals to increase chances of capturing */
   g_signal_connect(right_click, "released", G_CALLBACK(on_right_click), self);
@@ -987,6 +1010,24 @@ on_pin_button_released(GtkWidget *button, GdkEvent *event, gpointer user_data)
 static void
 launch_application(GDesktopAppInfo *app_info, GtkWidget *widget)
 {
+  g_print("DEBUG: launch_application() called\n");
+  
+  if (!app_info) {
+    g_warning("LAUNCH ERROR: app_info is NULL");
+    return;
+  }
+  
+  if (!widget) {
+    g_warning("LAUNCH ERROR: widget is NULL");
+    return;
+  }
+  
+  const char *app_name = g_app_info_get_name(G_APP_INFO(app_info));
+  const char *app_cmd = g_app_info_get_commandline(G_APP_INFO(app_info));
+  g_print("DEBUG: Launching app '%s' with command: %s\n", 
+          app_name ? app_name : "(unknown)", 
+          app_cmd ? app_cmd : "(unknown)");
+  
   GError *error = NULL;
   
   if (!g_app_info_launch(G_APP_INFO(app_info), NULL, NULL, &error)) {
@@ -994,6 +1035,8 @@ launch_application(GDesktopAppInfo *app_info, GtkWidget *widget)
     g_error_free(error);
     return;
   }
+  
+  g_print("DEBUG: App launch successful\n");
   
   // Add to recent apps
   GtkRoot *root = gtk_widget_get_root(widget);
@@ -1003,11 +1046,13 @@ launch_application(GDesktopAppInfo *app_info, GtkWidget *widget)
     if (app_id && window && window->recent_apps) {
       HyprMenuRecentApps *recent_apps = HYPRMENU_RECENT_APPS(window->recent_apps);
       hyprmenu_recent_apps_add_app(recent_apps, app_id);
+      g_print("DEBUG: Added to recent apps: %s\n", app_id);
     }
   }
   
   // Close the window if configured to do so
   if (config->close_on_app_launch) {
+    g_print("DEBUG: Configured to close on app launch, closing window\n");
     // Get the parent window and close it
     GtkRoot *root = gtk_widget_get_root(widget);
     if (GTK_IS_WINDOW(root)) {

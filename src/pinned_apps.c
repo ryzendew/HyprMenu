@@ -164,28 +164,130 @@ hyprmenu_pinned_apps_finalize (GObject *object)
   G_OBJECT_CLASS (hyprmenu_pinned_apps_parent_class)->finalize (object);
 }
 
+// Add this function for handling direct clicks on the flowbox
+static void
+on_pinned_apps_clicked(GtkGestureClick *gesture,
+                      gint n_press,
+                      double x,
+                      double y,
+                      gpointer user_data)
+{
+  (void)n_press;  // Silence unused parameter warning
+  
+  g_print("DEBUG: on_pinned_apps_clicked() called at x=%.1f, y=%.1f\n", x, y);
+  
+  HyprMenuPinnedApps *self = HYPRMENU_PINNED_APPS(user_data);
+  if (!self || !self->apps_box) {
+    g_warning("LAUNCH ERROR: Invalid self or apps_box in on_pinned_apps_clicked");
+    return;
+  }
+  
+  // Get the child at the click position
+  GtkFlowBoxChild *child = gtk_flow_box_get_child_at_pos(GTK_FLOW_BOX(self->apps_box), x, y);
+  
+  if (child) {
+    g_print("DEBUG: Found pinned apps flow box child at position\n");
+    
+    // Manually activate the child
+    GtkWidget *app_widget = gtk_flow_box_child_get_child(child);
+    if (app_widget && HYPRMENU_IS_APP_ENTRY(app_widget)) {
+      g_print("DEBUG: Manually launching pinned app\n");
+      hyprmenu_app_entry_launch(HYPRMENU_APP_ENTRY(app_widget));
+    }
+  } else {
+    g_print("DEBUG: No pinned apps flow box child found at position\n");
+  }
+}
+
+// Add this function to handle flowbox child activation
+static void
+on_pinned_app_activated(GtkFlowBox *flowbox,
+                       GtkFlowBoxChild *child,
+                       gpointer user_data)
+{
+  (void)flowbox;  // Silence unused parameter warning
+  (void)user_data;  // Silence unused parameter warning
+  
+  g_print("DEBUG: on_pinned_app_activated() called\n");
+  
+  if (!child) {
+    g_warning("LAUNCH ERROR: child is NULL in on_pinned_app_activated");
+    return;
+  }
+  
+  GtkWidget *app_widget = gtk_flow_box_child_get_child(child);
+  
+  if (!app_widget) {
+    g_warning("LAUNCH ERROR: app_widget is NULL in on_pinned_app_activated");
+    return;
+  }
+  
+  if (HYPRMENU_IS_APP_ENTRY(app_widget)) {
+    g_print("DEBUG: Launching pinned app\n");
+    hyprmenu_app_entry_launch(HYPRMENU_APP_ENTRY(app_widget));
+  } else {
+    g_warning("LAUNCH ERROR: app_widget is not an HyprMenuAppEntry");
+  }
+}
+
 static void
 hyprmenu_pinned_apps_init (HyprMenuPinnedApps *self)
 {
-  /* Set up container */
-  gtk_orientable_set_orientation (GTK_ORIENTABLE (self), GTK_ORIENTATION_VERTICAL);
-  gtk_widget_add_css_class (GTK_WIDGET (self), "pinned-apps");
+  /* Create UI */
+  GtkWidget *box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 8);
+  gtk_widget_set_parent (box, GTK_WIDGET (self));
   
-  /* Create label */
+  /* Add title */
   self->label = gtk_label_new (NULL);
-  gtk_label_set_markup (GTK_LABEL (self->label), "<b>Pinned Apps</b>");
-  gtk_widget_set_halign (self->label, GTK_ALIGN_START);
-  gtk_widget_set_margin_bottom (self->label, 6);
-  gtk_box_append (GTK_BOX (self), self->label);
+  char *markup = g_markup_printf_escaped("<span weight='bold' size='larger'>%s</span>", 
+                                       config->pinned_apps_title);
+  gtk_label_set_markup (GTK_LABEL (self->label), markup);
+  g_free (markup);
   
-  /* Create apps box */
+  gtk_widget_add_css_class (self->label, "hyprmenu-category-title");
+  gtk_label_set_xalign (GTK_LABEL (self->label), 0);
+  gtk_widget_set_margin_start(self->label, config->category_padding);
+  gtk_widget_set_margin_top (self->label, 8);
+  gtk_widget_set_margin_bottom (self->label, 8);
+  
+  gtk_box_append (GTK_BOX (box), self->label);
+  
+  /* Add flow box for apps */
   self->apps_box = gtk_flow_box_new ();
   gtk_flow_box_set_selection_mode (GTK_FLOW_BOX (self->apps_box), GTK_SELECTION_NONE);
-  gtk_flow_box_set_max_children_per_line (GTK_FLOW_BOX (self->apps_box), config->grid_columns);
-  gtk_flow_box_set_homogeneous (GTK_FLOW_BOX (self->apps_box), TRUE);
-  gtk_box_append (GTK_BOX (self), self->apps_box);
+  gtk_flow_box_set_homogeneous (GTK_FLOW_BOX (self->apps_box), FALSE);
+  gtk_flow_box_set_activate_on_single_click (GTK_FLOW_BOX (self->apps_box), TRUE);
   
-  /* Initialize pinned apps list */
+  g_print("DEBUG: Setting up pinned apps flowbox with child-activated signal\n");
+  
+  // Connect child-activated signal to launch apps
+  g_signal_connect(self->apps_box, "child-activated", G_CALLBACK(on_pinned_app_activated), NULL);
+  
+  // Add direct click handler for additional reliability
+  GtkGesture *click_gesture = gtk_gesture_click_new();
+  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click_gesture), GDK_BUTTON_PRIMARY);
+  g_signal_connect(click_gesture, "pressed", G_CALLBACK(on_pinned_apps_clicked), self);
+  gtk_widget_add_controller(self->apps_box, GTK_EVENT_CONTROLLER(click_gesture));
+  
+  int columns = config->grid_hexpand ? config->grid_columns : 5;
+  gtk_flow_box_set_max_children_per_line (GTK_FLOW_BOX (self->apps_box), columns);
+  gtk_flow_box_set_min_children_per_line (GTK_FLOW_BOX (self->apps_box), columns);
+  
+  gtk_widget_add_css_class (self->apps_box, "hyprmenu-pinned-apps");
+  gtk_widget_set_margin_start (self->apps_box, config->category_padding);
+  gtk_widget_set_margin_end (self->apps_box, config->category_padding);
+  
+  /* Set hexpand and halign based on config */
+  gtk_widget_set_hexpand (self->apps_box, config->grid_hexpand);
+  if (config->grid_hexpand) {
+    gtk_widget_set_halign (self->apps_box, GTK_ALIGN_CENTER);
+  } else {
+    gtk_widget_set_halign (self->apps_box, GTK_ALIGN_START);
+  }
+  
+  gtk_box_append (GTK_BOX (box), self->apps_box);
+  
+  /* Initialize data */
   self->pinned_ids = NULL;
   load_pinned_apps (self);
 }

@@ -72,6 +72,91 @@ on_list_row_clicked(GtkGestureClick *gesture,
   hyprmenu_app_entry_launch(app_entry);
 }
 
+static void
+on_grid_clicked(GtkGestureClick *gesture,
+                gint n_press,
+                double x,
+                double y,
+                gpointer user_data)
+{
+  (void)gesture;  // Silence unused parameter warning
+  (void)n_press;  // Silence unused parameter warning
+  
+  g_print("DEBUG: on_grid_clicked() called at x=%.1f, y=%.1f\n", x, y);
+  
+  HyprMenuCategoryList *cat_list = HYPRMENU_CATEGORY_LIST(user_data);
+  if (!cat_list) {
+    g_warning("LAUNCH ERROR: Invalid category list in on_grid_clicked");
+    return;
+  }
+  
+  // Access the flowbox through the parent widget's children
+  GtkWidget *grid = NULL;
+  GtkWidget *child = gtk_widget_get_first_child(GTK_WIDGET(cat_list));
+  while (child) {
+    if (GTK_IS_FLOW_BOX(child)) {
+      grid = child;
+      break;
+    }
+    child = gtk_widget_get_next_sibling(child);
+  }
+  
+  if (!grid) {
+    g_warning("LAUNCH ERROR: Could not find flowbox grid in on_grid_clicked");
+    return;
+  }
+  
+  // Get the child at the click position
+  GtkFlowBoxChild *flowbox_child = gtk_flow_box_get_child_at_pos(GTK_FLOW_BOX(grid), x, y);
+  
+  if (flowbox_child) {
+    g_print("DEBUG: Found flow box child at position\n");
+    
+    // Manually activate the child
+    GtkWidget *app_widget = gtk_flow_box_child_get_child(flowbox_child);
+    if (app_widget && HYPRMENU_IS_APP_ENTRY(app_widget)) {
+      HyprMenuAppEntry *entry = HYPRMENU_APP_ENTRY(app_widget);
+      g_print("DEBUG: Manually launching app: %s\n", 
+              hyprmenu_app_entry_get_app_name(entry) ? hyprmenu_app_entry_get_app_name(entry) : "(unknown)");
+      hyprmenu_app_entry_launch(entry);
+    }
+  } else {
+    g_print("DEBUG: No flow box child found at position\n");
+  }
+}
+
+static void
+on_flowbox_child_activated(GtkFlowBox *flowbox,
+                          GtkFlowBoxChild *child,
+                          gpointer user_data)
+{
+  (void)flowbox;  // Silence unused parameter warning
+  (void)user_data;  // Silence unused parameter warning
+  
+  g_print("DEBUG: on_flowbox_child_activated() called\n");
+  
+  if (!child) {
+    g_warning("LAUNCH ERROR: child is NULL in on_flowbox_child_activated");
+    return;
+  }
+  
+  GtkWidget *app_widget = gtk_flow_box_child_get_child(child);
+  
+  if (!app_widget) {
+    g_warning("LAUNCH ERROR: app_widget is NULL in on_flowbox_child_activated");
+    return;
+  }
+  
+  if (HYPRMENU_IS_APP_ENTRY(app_widget)) {
+    HyprMenuAppEntry *entry = HYPRMENU_APP_ENTRY(app_widget);
+    g_print("DEBUG: Launching app entry: %s\n", 
+            hyprmenu_app_entry_get_app_name(entry) ? hyprmenu_app_entry_get_app_name(entry) : "(unknown)");
+    hyprmenu_app_entry_launch(entry);
+  } else {
+    g_warning("LAUNCH ERROR: app_widget is not an HyprMenuAppEntry");
+  }
+}
+
 struct _HyprMenuCategoryList
 {
   GtkBox parent_instance;
@@ -153,7 +238,20 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   /* Set spacing for grid-like appearance */
   gtk_flow_box_set_column_spacing(GTK_FLOW_BOX(self->all_apps_grid), config->grid_column_spacing);
   gtk_flow_box_set_row_spacing(GTK_FLOW_BOX(self->all_apps_grid), config->grid_row_spacing);
+  
+  /* Make sure we can activate on single click */
   gtk_flow_box_set_activate_on_single_click(GTK_FLOW_BOX(self->all_apps_grid), TRUE);
+  
+  g_print("DEBUG: Setting up flowbox child-activated signal\n");
+  
+  /* Connect child-activated signal to launch apps */
+  g_signal_connect(self->all_apps_grid, "child-activated", G_CALLBACK(on_flowbox_child_activated), NULL);
+  
+  /* Add direct click handler for flowbox items */
+  GtkGesture *click_gesture = gtk_gesture_click_new();
+  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click_gesture), GDK_BUTTON_PRIMARY);
+  g_signal_connect(click_gesture, "pressed", G_CALLBACK(on_grid_clicked), self);
+  gtk_widget_add_controller(self->all_apps_grid, GTK_EVENT_CONTROLLER(click_gesture));
   
   gtk_widget_add_css_class(self->all_apps_grid, "hyprmenu-app-grid");
   gtk_widget_set_hexpand(self->all_apps_grid, config->grid_hexpand);

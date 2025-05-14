@@ -192,6 +192,10 @@ set_defaults(HyprMenuConfig *config)
   config->blur_strength = 5;
   config->opacity = 0.85;
   
+  // Section titles
+  config->recent_apps_title = g_strdup("Recent Apps");
+  config->pinned_apps_title = g_strdup("Pinned Apps");
+  
   // File paths
   config->config_dir = g_build_filename(g_get_home_dir(), ".config", "hyprmenu", NULL);
   config->config_file = g_build_filename(config->config_dir, "hyprmenu.conf", NULL);
@@ -282,6 +286,10 @@ hyprmenu_config_free()
   g_free(config->system_button_icon_color);
   g_free(config->system_button_hover_color);
   g_free(config->system_button_active_color);
+  
+  // Section titles
+  g_free(config->recent_apps_title);
+  g_free(config->pinned_apps_title);
   
   // File paths
   g_free(config->config_dir);
@@ -504,9 +512,29 @@ hyprmenu_config_load()
     config->opacity = g_key_file_get_double(keyfile, "Behavior", "opacity", NULL);
   }
   
-  // If any option is missing, regenerate the config file
+  // Get or set default for show_shadow
+  if (g_key_file_has_key(keyfile, "Behavior", "show_shadow", NULL)) {
+    config->show_shadow = g_key_file_get_boolean(keyfile, "Behavior", "show_shadow", NULL);
+  }
+  
+  // Get or set default for opacity
+  if (g_key_file_has_key(keyfile, "Behavior", "opacity", NULL)) {
+    config->opacity = g_key_file_get_double(keyfile, "Behavior", "opacity", NULL);
+  }
+  
+  // Get or set default for section titles
+  if (g_key_file_has_key(keyfile, "Interface", "recent_apps_title", NULL)) {
+    g_free(config->recent_apps_title);
+    config->recent_apps_title = g_key_file_get_string(keyfile, "Interface", "recent_apps_title", NULL);
+  }
+  
+  if (g_key_file_has_key(keyfile, "Interface", "pinned_apps_title", NULL)) {
+    g_free(config->pinned_apps_title);
+    config->pinned_apps_title = g_key_file_get_string(keyfile, "Interface", "pinned_apps_title", NULL);
+  }
+  
+  // Save config back if any missing options
   if (missing_option) {
-    g_message("Missing config option(s) detected. Regenerating config file with all options.");
     hyprmenu_config_save();
   }
   
@@ -717,6 +745,10 @@ hyprmenu_config_save_with_error(GError **error)
   g_key_file_set_boolean(keyfile, "Behavior", "blur_background", config->blur_background);
   g_key_file_set_integer(keyfile, "Behavior", "blur_strength", config->blur_strength);
   g_key_file_set_double(keyfile, "Behavior", "opacity", config->opacity);
+  
+  // Add section titles
+  g_key_file_set_string(keyfile, "Interface", "recent_apps_title", config->recent_apps_title);
+  g_key_file_set_string(keyfile, "Interface", "pinned_apps_title", config->pinned_apps_title);
   
   // Save to file
   g_print("Writing config to: %s\n", config->config_file);

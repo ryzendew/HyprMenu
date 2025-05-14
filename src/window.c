@@ -113,12 +113,12 @@ on_key_press (GtkEventControllerKey *controller,
   // Close window on Escape key press
   if (keyval == GDK_KEY_Escape) {
     if (config->close_on_escape) {
-      GtkApplication *app = GTK_APPLICATION(gtk_window_get_application(GTK_WINDOW(self)));
-      gtk_window_close(GTK_WINDOW(self));
-      if (app) {
-        g_application_quit(G_APPLICATION(app));
-      }
-      return TRUE;
+    GtkApplication *app = GTK_APPLICATION(gtk_window_get_application(GTK_WINDOW(self)));
+    gtk_window_close(GTK_WINDOW(self));
+    if (app) {
+      g_application_quit(G_APPLICATION(app));
+    }
+    return TRUE;
     }
   }
   
@@ -642,7 +642,7 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_widget_set_margin_top(self->search_entry, search_extra_pad);
   gtk_widget_set_margin_bottom(self->search_entry, search_extra_pad);
   gtk_box_append(GTK_BOX(self->main_box), self->search_entry);
-
+  
   // Pinned apps section
   HyprMenuPinnedApps *pinned_apps = hyprmenu_pinned_apps_new();
   self->pinned_apps = GTK_WIDGET(pinned_apps);
