@@ -108,9 +108,9 @@ set_defaults(HyprMenuConfig *config)
   config->search_background_opacity = 0.7;
   config->search_corner_radius = 8;
   config->search_text_color = g_strdup("");
-  config->search_font_size = 13;
+  config->search_font_size = 14;
   config->search_font_family = g_strdup("Sans");
-  config->search_padding = 4;
+  config->search_padding = 8;
   
   // App entry style
   config->app_entry_background_color = g_strdup("");
@@ -660,7 +660,7 @@ hyprmenu_config_apply_css()
   // Main box styles
   g_string_append(css,
     ".hyprmenu-main-box {\n"
-    "  padding: 0px;\n"
+    "  padding: 8px;\n"
     "}\n");
   
   // Search entry styles
@@ -668,13 +668,12 @@ hyprmenu_config_apply_css()
     ".hyprmenu-search {\n"
     "  background-color: %s;\n"
     "  border-radius: %dpx;\n"
-    "  padding: %dpx 6px;\n"
+    "  padding: %dpx 12px;\n"
     "  font-size: %dpx;\n"
     "  color: %s;\n"
     "  border: 1px solid rgba(255, 255, 255, 0.15);\n"
-    "  margin: 2px 0 6px 0;\n"
-    "  min-width: 140px;\n"
-    "  max-width: 360px;\n",
+    "  margin: 8px 4px 12px 4px;\n"
+    "  min-width: 200px;\n",
     config->search_background_color,
     config->search_corner_radius,
     config->search_padding,
@@ -692,14 +691,14 @@ hyprmenu_config_apply_css()
   g_string_append(css,
     ".hyprmenu-app-grid {\n"
     "  background-color: transparent;\n"
-    "  padding: 0px;\n"
+    "  padding: 4px;\n"
     "  margin: 0 auto;\n"
     "}\n"
     ".hyprmenu-category-list {\n"
     "  background-color: transparent;\n"
-    "  padding: 0px;\n"
+    "  padding: 4px;\n"
     "  margin: 0 auto;\n"
-    "  min-width: 140px;\n"
+    "  min-width: 200px;\n"
     "}\n");
   
   // Category styles
@@ -837,8 +836,8 @@ hyprmenu_config_apply_css()
     ".hyprmenu-system-buttons {\n"
     "  background-color: rgba(40, 42, 54, 0.7);\n"
     "  border-radius: 6px;\n"
-    "  padding: 2px 0px;\n"
-    "  margin: 2px 0px 2px 0px;\n"
+    "  padding: 4px 8px;\n"
+    "  margin: 8px 0px 2px 0px;\n"
     "  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);\n"
     "}\n"
     
