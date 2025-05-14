@@ -6,6 +6,7 @@ A highly customizable, modern application launcher for Wayland compositors (Hypr
 - **Fully customizable appearance** via `hyprmenu.conf`
 - **Outer and inner borders**: independently style the menu's outer and inner borders
 - **Grid and list views**: switchable, with configurable columns, spacing, and item size
+- **Most Used Apps**: automatically tracks and displays frequently used applications at the top
 - **Flat, icon-only system buttons** (power, lock, etc.)
 - **Alphabetically organized config** for easy navigation
 - **Per-section options** for Window, Grid, List, AppEntry, Category, Search, SystemButton, Behavior, Style, Layout
@@ -35,12 +36,20 @@ inner_border_radius=12
 - **[Category]**: Background, text color, font, padding, separators
 - **[Search]**: Bar color, font, padding, icon, placeholder, focus border
 - **[SystemButton]**: Icon color, hover/active color, size, spacing, flat style
-- **[Behavior]**: Close on click, super key, app launch, focus, recent apps, show/hide UI elements
+- **[Behavior]**: Close on click, super key, app launch, focus, most used apps, show/hide UI elements
 - **[Style]**: Global background, blur, transparency, AGS effects
 - **[Layout]**: Window size, margins, position, offsets
 
 ### System Buttons: Flat/Icon-Only
 System buttons are styled to be flat and icon-only by default. You can further customize their color and hover effect in the `[SystemButton]` section.
+
+### Most Used Apps
+HyprMenu tracks which applications you launch and displays your most frequently used apps at the top of the menu for quick access. You can configure the number of most used apps to display:
+
+```ini
+[Behavior]
+max_recent_apps=5
+```
 
 ### Example Config Snippet
 ```ini
@@ -67,6 +76,9 @@ icon_color=#fff
 hover_color=rgba(255,255,255,0.08)
 background_color=transparent
 corner_radius=0
+
+[Behavior]
+max_recent_apps=5
 ```
 
 ## Customization Tips
@@ -75,6 +87,7 @@ corner_radius=0
 - **Make system buttons flat**: Use the default config or set `background_color=transparent` and `corner_radius=0` in `[SystemButton]`.
 - **Adjust spacing and padding**: All major sections have `padding`, `margin`, or `spacing` options.
 - **Colors**: All color values support hex, rgb(), or rgba().
+- **Customize most used apps**: Change the number of apps shown in the "Most Used Apps" section by setting `max_recent_apps` in `[Behavior]`.
 
 ## Getting Started
 1. Copy or generate a config: `~/.config/hyprmenu/hyprmenu.conf`
@@ -103,6 +116,7 @@ For more details, see the comments in the config file or open an issue for help.
 - Search functionality
 - Dark theme by default
 - Support for both grid and list view modes
+- **Most Used Apps section:** Automatically tracks and displays your most frequently used applications at the top of the menu
 - **Full color theming:** Every part of the menu (background, border, search, categories, app entries, system buttons, highlights, separators, scrollbar, shadow, etc.) can be themed via the config file.
 - **Pywal & AGS color support:** Optionally auto-theme the menu using pywal or AGS color scripts, or override any color manually.
 - **Config auto-update:** The config file is auto-regenerated to include all new options when the app is updated.
