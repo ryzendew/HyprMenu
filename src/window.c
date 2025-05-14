@@ -645,9 +645,9 @@ hyprmenu_window_init (HyprMenuWindow *self)
   /* Create app grid */
   self->app_grid = GTK_WIDGET (hyprmenu_app_grid_new ());
   gtk_widget_add_css_class (self->app_grid, "hyprmenu-app-grid");
-  gtk_widget_set_hexpand (self->app_grid, TRUE);
+  gtk_widget_set_hexpand (self->app_grid, FALSE);
   gtk_widget_set_vexpand (self->app_grid, TRUE);
-  gtk_widget_set_halign(self->app_grid, GTK_ALIGN_FILL);
+  gtk_widget_set_halign(self->app_grid, GTK_ALIGN_CENTER);
   gtk_box_append (GTK_BOX (self->main_box), self->app_grid);
   
   // Set grid columns if in grid view

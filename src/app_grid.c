@@ -140,11 +140,15 @@ hyprmenu_app_grid_init (HyprMenuAppGrid *self)
   /* Create scrolled window */
   self->scrolled_window = gtk_scrolled_window_new ();
   gtk_widget_set_vexpand (self->scrolled_window, TRUE);
+  gtk_widget_set_hexpand(self->scrolled_window, FALSE);
+  gtk_widget_set_halign(self->scrolled_window, GTK_ALIGN_CENTER);
   gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (self->scrolled_window),
                                  GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
   
   /* Create both views */
   self->category_list = GTK_WIDGET(hyprmenu_category_list_new());
+  gtk_widget_set_hexpand(self->category_list, FALSE);
+  gtk_widget_set_halign(self->category_list, GTK_ALIGN_CENTER);
   self->list_view = hyprmenu_list_view_new();
   
   /* Set initial view based on config */

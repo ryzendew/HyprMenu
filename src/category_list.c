@@ -159,6 +159,7 @@ hyprmenu_category_list_init (HyprMenuCategoryList *self)
   gtk_widget_add_css_class(self->all_apps_grid, "hyprmenu-app-grid");
   gtk_widget_set_visible(self->all_apps_grid, FALSE);  // Hide by default (list view is default)
   gtk_widget_set_halign(self->all_apps_grid, GTK_ALIGN_CENTER);
+  gtk_widget_set_hexpand(self->all_apps_grid, FALSE);
   gtk_widget_set_margin_start(self->all_apps_grid, 12);
   gtk_widget_set_margin_end(self->all_apps_grid, 12);
   gtk_widget_set_margin_top(self->all_apps_grid, 12);
