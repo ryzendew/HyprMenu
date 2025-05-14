@@ -55,6 +55,9 @@ typedef struct _HyprMenuConfig {
   int search_font_size;
   char *search_font_family;
   int search_padding;
+  int search_min_height;
+  int search_left_padding;
+  int search_length;
   
   // App entry style
   double app_entry_background_opacity;
@@ -130,6 +133,8 @@ typedef struct _HyprMenuConfig {
   // ---
   gboolean use_pywal_colors;
   gboolean use_ags_colors;
+
+  int menu_padding;
 } HyprMenuConfig;
 
 // Global config instance

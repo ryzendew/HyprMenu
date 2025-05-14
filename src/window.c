@@ -611,10 +611,14 @@ hyprmenu_window_init (HyprMenuWindow *self)
   
   /* Create main container (vertical box) */
   GtkWidget *v_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-  gtk_widget_set_margin_start(v_box, 12);
-  gtk_widget_set_margin_end(v_box, 12);
-  gtk_widget_set_margin_top(v_box, 12);
-  gtk_widget_set_margin_bottom(v_box, 12);
+  gtk_widget_set_margin_start(v_box, config->menu_padding);
+  gtk_widget_set_margin_end(v_box, config->menu_padding);
+  gtk_widget_set_margin_top(v_box, config->menu_padding);
+  gtk_widget_set_margin_bottom(v_box, config->menu_padding);
+  gtk_widget_set_hexpand(v_box, TRUE);
+  gtk_widget_set_vexpand(v_box, TRUE);
+  gtk_widget_set_halign(v_box, GTK_ALIGN_FILL);
+  gtk_widget_set_valign(v_box, GTK_ALIGN_FILL);
   gtk_window_set_child(GTK_WINDOW(self), v_box);
   
   /* Create content area */
@@ -625,30 +629,31 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_box_append(GTK_BOX(v_box), content_box);
   
   /* Create main box */
-  self->main_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-  gtk_widget_add_css_class (self->main_box, "hyprmenu-main-box");
-  gtk_widget_set_hexpand (self->main_box, TRUE);
+  self->main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_add_css_class(self->main_box, "hyprmenu-main-box");
+  gtk_widget_set_hexpand(self->main_box, TRUE);
   gtk_widget_set_halign(self->main_box, GTK_ALIGN_FILL);
   gtk_box_append(GTK_BOX(content_box), self->main_box);
   
-  /* Create search entry */
-  self->search_entry = gtk_search_entry_new ();
-  gtk_widget_add_css_class (self->search_entry, "hyprmenu-search");
-  gtk_widget_set_hexpand (self->search_entry, TRUE);
+  // Search bar
+  self->search_entry = gtk_search_entry_new();
+  gtk_widget_add_css_class(self->search_entry, "hyprmenu-search");
+  gtk_widget_set_hexpand(self->search_entry, TRUE);
   gtk_widget_set_halign(self->search_entry, GTK_ALIGN_FILL);
-  gtk_widget_set_margin_start (self->search_entry, 12);
-  gtk_widget_set_margin_end (self->search_entry, 12);
-  gtk_widget_set_margin_top (self->search_entry, 12);
-  gtk_widget_set_margin_bottom (self->search_entry, 12);
-  gtk_box_append (GTK_BOX (self->main_box), self->search_entry);
-  
-  /* Create app grid */
-  self->app_grid = GTK_WIDGET (hyprmenu_app_grid_new ());
-  gtk_widget_add_css_class (self->app_grid, "hyprmenu-app-grid");
-  gtk_widget_set_hexpand (self->app_grid, FALSE);
-  gtk_widget_set_vexpand (self->app_grid, TRUE);
-  gtk_widget_set_halign(self->app_grid, GTK_ALIGN_CENTER);
-  gtk_box_append (GTK_BOX (self->main_box), self->app_grid);
+  int search_extra_pad = 8;
+  gtk_widget_set_margin_start(self->search_entry, config->menu_padding + search_extra_pad);
+  gtk_widget_set_margin_end(self->search_entry, config->menu_padding + search_extra_pad);
+  gtk_widget_set_margin_top(self->search_entry, search_extra_pad);
+  gtk_widget_set_margin_bottom(self->search_entry, search_extra_pad);
+  gtk_box_append(GTK_BOX(self->main_box), self->search_entry);
+
+  // App grid
+  self->app_grid = GTK_WIDGET(hyprmenu_app_grid_new());
+  gtk_widget_add_css_class(self->app_grid, "hyprmenu-app-grid");
+  gtk_widget_set_hexpand(self->app_grid, TRUE);
+  gtk_widget_set_halign(self->app_grid, GTK_ALIGN_FILL);
+  gtk_widget_set_vexpand(self->app_grid, TRUE);
+  gtk_box_append(GTK_BOX(self->main_box), self->app_grid);
   
   // Set grid columns if in grid view
   if (config->use_grid_view) {
@@ -727,6 +732,10 @@ hyprmenu_window_init (HyprMenuWindow *self)
   /* Focus search entry if configured */
   if (config->focus_search_on_open) {
     g_signal_connect(self, "map", G_CALLBACK(gtk_widget_grab_focus), self->search_entry);
+  }
+
+  if (config->search_length > 0) {
+    gtk_widget_set_size_request(self->search_entry, config->search_length, -1);
   }
 }
 

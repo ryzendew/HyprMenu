@@ -76,6 +76,7 @@ set_defaults(HyprMenuConfig *config)
   config->menu_position = POSITION_TOP_LEFT; // Default position is top-left
   config->bottom_offset = 55;
   config->top_offset = 48;
+  config->menu_padding = 2;
   
   // Window style
   config->background_opacity = 0.85;
@@ -111,6 +112,9 @@ set_defaults(HyprMenuConfig *config)
   config->search_font_size = 14;
   config->search_font_family = g_strdup("Sans");
   config->search_padding = 8;
+  config->search_min_height = 36;
+  config->search_left_padding = 32;
+  config->search_length = 0;
   
   // App entry style
   config->app_entry_background_color = g_strdup("");
@@ -265,6 +269,7 @@ hyprmenu_config_load()
     if (!g_key_file_has_key(keyfile, "Layout", "menu_position", NULL)) missing_option = TRUE;
     if (!g_key_file_has_key(keyfile, "Layout", "bottom_offset", NULL)) missing_option = TRUE;
     if (!g_key_file_has_key(keyfile, "Layout", "top_offset", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Layout", "menu_padding", NULL)) missing_option = TRUE;
     config->window_width = g_key_file_get_integer(keyfile, "Layout", "window_width", NULL);
     config->window_height = g_key_file_get_integer(keyfile, "Layout", "window_height", NULL);
     config->top_margin = g_key_file_get_integer(keyfile, "Layout", "top_margin", NULL);
@@ -281,6 +286,7 @@ hyprmenu_config_load()
     // Load offsets
     config->bottom_offset = g_key_file_get_integer(keyfile, "Layout", "bottom_offset", NULL);
     config->top_offset = g_key_file_get_integer(keyfile, "Layout", "top_offset", NULL);
+    config->menu_padding = g_key_file_get_integer(keyfile, "Layout", "menu_padding", NULL);
   }
   
   // Window style
@@ -392,6 +398,18 @@ hyprmenu_config_load()
     config->list_item_size = g_key_file_get_integer(keyfile, "View", "list_item_size", NULL);
   }
   
+  // Search entry style
+  if (g_key_file_has_group(keyfile, "Search")) {
+    if (!g_key_file_has_key(keyfile, "Search", "padding", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Search", "min_height", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Search", "left_padding", NULL)) missing_option = TRUE;
+    if (!g_key_file_has_key(keyfile, "Search", "length", NULL)) missing_option = TRUE;
+    config->search_padding = g_key_file_get_integer(keyfile, "Search", "padding", NULL);
+    config->search_min_height = g_key_file_get_integer(keyfile, "Search", "min_height", NULL);
+    config->search_left_padding = g_key_file_get_integer(keyfile, "Search", "left_padding", NULL);
+    config->search_length = g_key_file_get_integer(keyfile, "Search", "length", NULL);
+  }
+  
   // If any option is missing, regenerate the config file
   if (missing_option) {
     g_message("Missing config option(s) detected. Regenerating config file with all options.");
@@ -486,6 +504,7 @@ hyprmenu_config_save_with_error(GError **error)
   g_key_file_set_boolean(keyfile, "Layout", "center_window", config->center_window);
   g_key_file_set_integer(keyfile, "Layout", "bottom_offset", config->bottom_offset);
   g_key_file_set_integer(keyfile, "Layout", "top_offset", config->top_offset);
+  g_key_file_set_integer(keyfile, "Layout", "menu_padding", config->menu_padding);
   
   // Save position setting
   g_key_file_set_string(keyfile, "Layout", "menu_position", 
@@ -568,6 +587,19 @@ hyprmenu_config_save_with_error(GError **error)
   g_key_file_set_string(keyfile, "Style", "shadow_color", config->shadow_color);
   g_key_file_set_boolean(keyfile, "Style", "use_pywal_colors", config->use_pywal_colors);
   g_key_file_set_boolean(keyfile, "Style", "use_ags_colors", config->use_ags_colors);
+  
+  // Always write all [Search] options
+  g_key_file_remove_group(keyfile, "Search", NULL);
+  g_key_file_set_string(keyfile, "Search", "background_color", config->search_background_color);
+  g_key_file_set_double(keyfile, "Search", "background_opacity", config->search_background_opacity);
+  g_key_file_set_integer(keyfile, "Search", "corner_radius", config->search_corner_radius);
+  g_key_file_set_string(keyfile, "Search", "text_color", config->search_text_color);
+  g_key_file_set_integer(keyfile, "Search", "font_size", config->search_font_size);
+  g_key_file_set_string(keyfile, "Search", "font_family", config->search_font_family);
+  g_key_file_set_integer(keyfile, "Search", "padding", config->search_padding);
+  g_key_file_set_integer(keyfile, "Search", "min_height", config->search_min_height);
+  g_key_file_set_integer(keyfile, "Search", "left_padding", config->search_left_padding);
+  g_key_file_set_integer(keyfile, "Search", "length", config->search_length);
   
   // Save to file
   g_print("Writing config to: %s\n", config->config_file);
@@ -668,15 +700,21 @@ hyprmenu_config_apply_css()
     ".hyprmenu-search {\n"
     "  background-color: %s;\n"
     "  border-radius: %dpx;\n"
-    "  padding: %dpx 12px;\n"
+    "  min-height: %dpx;\n"
+    "  padding: %dpx %dpx %dpx %dpx;\n"
     "  font-size: %dpx;\n"
     "  color: %s;\n"
     "  border: 1px solid rgba(255, 255, 255, 0.15);\n"
-    "  margin: 8px 4px 12px 4px;\n"
-    "  min-width: 200px;\n",
+    "  margin: 0;\n"
+    /* "  width: 100%%;\n" */
+    "  box-sizing: border-box;\n",
     config->search_background_color,
     config->search_corner_radius,
+    config->search_min_height,
     config->search_padding,
+    config->search_padding,
+    config->search_padding,
+    config->search_left_padding,
     config->search_font_size,
     config->search_text_color);
   
@@ -691,14 +729,8 @@ hyprmenu_config_apply_css()
   g_string_append(css,
     ".hyprmenu-app-grid {\n"
     "  background-color: transparent;\n"
-    "  padding: 4px;\n"
-    "  margin: 0 auto;\n"
-    "}\n"
-    ".hyprmenu-category-list {\n"
-    "  background-color: transparent;\n"
-    "  padding: 4px;\n"
-    "  margin: 0 auto;\n"
-    "  min-width: 200px;\n"
+    "  padding: 0;\n"
+    "  margin: 0;\n"
     "}\n");
   
   // Category styles
@@ -776,6 +808,7 @@ hyprmenu_config_apply_css()
     "  border: 1px solid rgba(255, 255, 255, 0.08);\n"
     "  min-width: 100px;\n"
     "  min-height: 100px;\n"
+    "  margin: 0;\n"
     "}\n"
     ".grid-item:hover {\n"
     "  background-color: rgba(70, 70, 80, 0.8);\n"
