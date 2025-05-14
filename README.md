@@ -2,11 +2,14 @@
 
 A modern application launcher for Hyprland, built with GTK4 and GTK Layer Shell.
 
-![image](https://github.com/user-attachments/assets/ef651c22-771c-42ff-97d7-66bb88bd2af3)
+![image](https://github.com/user-attachments/assets/1beff4e7-e30a-4bf0-bb71-750691c8d09b)
 
-![image](https://github.com/user-attachments/assets/94718c1a-754a-4891-8e84-8a4ef7aa1676)
 
-![image](https://github.com/user-attachments/assets/2737c508-6607-4eec-b575-01282f6948d6)
+![image](https://github.com/user-attachments/assets/913c0183-eab6-4e7d-b8fa-e3bfc295bfbc)
+
+
+![image](https://github.com/user-attachments/assets/0c7de1d8-dab3-4eeb-a84e-c279d3155e39)
+
 
 
 ## Requirements
