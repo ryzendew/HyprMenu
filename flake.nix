@@ -14,7 +14,7 @@
       {
         packages.default = pkgs.stdenv.mkDerivation {
           pname = "hyprmenu";
-          version = "0.1.0";
+          version = "0.1";
           src = builtins.path {
             path = ./.;
             name = "hyprmenu-source";
