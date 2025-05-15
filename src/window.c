@@ -523,6 +523,39 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_layer_set_keyboard_mode(GTK_WINDOW(self), GTK_LAYER_SHELL_KEYBOARD_MODE_EXCLUSIVE);
   gtk_layer_set_exclusive_zone(GTK_WINDOW(self), -1);
   
+  /* Set namespace for blur and other effects */
+  gtk_layer_set_namespace(GTK_WINDOW(self), "hyprmenu");
+  
+  /* Enable blur for Hyprland */
+  GdkSurface *surface = gtk_native_get_surface(GTK_NATIVE(self));
+  if (GDK_IS_WAYLAND_SURFACE(surface)) {
+    // Set window background to transparent to allow blur
+    GtkStyleContext *style_context = gtk_widget_get_style_context(GTK_WIDGET(self));
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider, 
+                                   ".hyprmenu-window { "
+                                   "  background-color: rgba(0, 0, 0, 0.0); "
+                                   "  border-radius: 16px; "
+                                   "  overflow: hidden; "
+                                   "}\n"
+                                   ".hyprmenu-main-box { "
+                                   "  border-radius: 12px; "
+                                   "  overflow: hidden; "
+                                   "}\n"
+                                   "window, .background { "
+                                   "  border-radius: 16px; "
+                                   "  overflow: hidden; "
+                                   "}"
+                                   ,
+                                   -1);
+    gtk_style_context_add_provider(style_context,
+                                  GTK_STYLE_PROVIDER(provider),
+                                  GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(provider);
+    
+    g_message("Enabled native Hyprland blur support with improved corner radius");
+  }
+  
   /* Position window based on menu_position config */
   g_message("Setting window position to: %d", config->menu_position);
   
@@ -652,7 +685,7 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_widget_set_margin_top(content_container, 4);
   gtk_widget_set_margin_bottom(content_container, 12); // Increased space between grid and system buttons
   gtk_box_append(GTK_BOX(self->main_box), content_container);
-  
+
   // App grid
   self->app_grid = GTK_WIDGET(hyprmenu_app_grid_new());
   gtk_widget_add_css_class(self->app_grid, "hyprmenu-app-grid");

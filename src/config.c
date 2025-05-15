@@ -474,65 +474,65 @@ hyprmenu_config_load()
   // Behavior options
   if (g_key_file_has_group(keyfile, "Behavior")) {
     if (g_key_file_has_key(keyfile, "Behavior", "close_on_click_outside", NULL)) {
-      config->close_on_click_outside = g_key_file_get_boolean(keyfile, "Behavior", "close_on_click_outside", NULL);
+    config->close_on_click_outside = g_key_file_get_boolean(keyfile, "Behavior", "close_on_click_outside", NULL);
     }
     
     if (g_key_file_has_key(keyfile, "Behavior", "close_on_super_key", NULL)) {
-      config->close_on_super_key = g_key_file_get_boolean(keyfile, "Behavior", "close_on_super_key", NULL);
+    config->close_on_super_key = g_key_file_get_boolean(keyfile, "Behavior", "close_on_super_key", NULL);
     }
     
     if (g_key_file_has_key(keyfile, "Behavior", "close_on_app_launch", NULL)) {
-      config->close_on_app_launch = g_key_file_get_boolean(keyfile, "Behavior", "close_on_app_launch", NULL);
+    config->close_on_app_launch = g_key_file_get_boolean(keyfile, "Behavior", "close_on_app_launch", NULL);
     }
     
     if (g_key_file_has_key(keyfile, "Behavior", "focus_search_on_open", NULL)) {
-      config->focus_search_on_open = g_key_file_get_boolean(keyfile, "Behavior", "focus_search_on_open", NULL);
+    config->focus_search_on_open = g_key_file_get_boolean(keyfile, "Behavior", "focus_search_on_open", NULL);
     }
     
     if (g_key_file_has_key(keyfile, "Behavior", "close_on_escape", NULL)) {
-      config->close_on_escape = g_key_file_get_boolean(keyfile, "Behavior", "close_on_escape", NULL);
+    config->close_on_escape = g_key_file_get_boolean(keyfile, "Behavior", "close_on_escape", NULL);
     }
     
     if (g_key_file_has_key(keyfile, "Behavior", "close_on_focus_out", NULL)) {
-      config->close_on_focus_out = g_key_file_get_boolean(keyfile, "Behavior", "close_on_focus_out", NULL);
+    config->close_on_focus_out = g_key_file_get_boolean(keyfile, "Behavior", "close_on_focus_out", NULL);
     }
     
     if (g_key_file_has_key(keyfile, "Behavior", "show_categories", NULL)) {
-      config->show_categories = g_key_file_get_boolean(keyfile, "Behavior", "show_categories", NULL);
+    config->show_categories = g_key_file_get_boolean(keyfile, "Behavior", "show_categories", NULL);
     }
     
     if (g_key_file_has_key(keyfile, "Behavior", "show_descriptions", NULL)) {
-      config->show_descriptions = g_key_file_get_boolean(keyfile, "Behavior", "show_descriptions", NULL);
+    config->show_descriptions = g_key_file_get_boolean(keyfile, "Behavior", "show_descriptions", NULL);
     }
     
     if (g_key_file_has_key(keyfile, "Behavior", "show_icons", NULL)) {
-      config->show_icons = g_key_file_get_boolean(keyfile, "Behavior", "show_icons", NULL);
+    config->show_icons = g_key_file_get_boolean(keyfile, "Behavior", "show_icons", NULL);
     }
     
     if (g_key_file_has_key(keyfile, "Behavior", "show_search", NULL)) {
-      config->show_search = g_key_file_get_boolean(keyfile, "Behavior", "show_search", NULL);
+    config->show_search = g_key_file_get_boolean(keyfile, "Behavior", "show_search", NULL);
     }
     
     if (g_key_file_has_key(keyfile, "Behavior", "show_scrollbar", NULL)) {
-      config->show_scrollbar = g_key_file_get_boolean(keyfile, "Behavior", "show_scrollbar", NULL);
+    config->show_scrollbar = g_key_file_get_boolean(keyfile, "Behavior", "show_scrollbar", NULL);
     }
     
     if (g_key_file_has_key(keyfile, "Behavior", "show_border", NULL)) {
-      config->show_border = g_key_file_get_boolean(keyfile, "Behavior", "show_border", NULL);
-    }
-    
-    if (g_key_file_has_key(keyfile, "Behavior", "show_shadow", NULL)) {
-      config->show_shadow = g_key_file_get_boolean(keyfile, "Behavior", "show_shadow", NULL);
-    }
-    
+    config->show_border = g_key_file_get_boolean(keyfile, "Behavior", "show_border", NULL);
+  }
+  
+  if (g_key_file_has_key(keyfile, "Behavior", "show_shadow", NULL)) {
+    config->show_shadow = g_key_file_get_boolean(keyfile, "Behavior", "show_shadow", NULL);
+  }
+  
     if (g_key_file_has_key(keyfile, "Behavior", "blur_background", NULL)) {
       config->blur_background = g_key_file_get_boolean(keyfile, "Behavior", "blur_background", NULL);
-    }
-    
+  }
+  
     if (g_key_file_has_key(keyfile, "Behavior", "blur_strength", NULL)) {
       config->blur_strength = g_key_file_get_integer(keyfile, "Behavior", "blur_strength", NULL);
-    }
-    
+  }
+  
     if (g_key_file_has_key(keyfile, "Behavior", "opacity", NULL)) {
       config->opacity = g_key_file_get_double(keyfile, "Behavior", "opacity", NULL);
     }
@@ -795,28 +795,42 @@ hyprmenu_config_apply_css()
 
   // Create CSS string
   g_string_append_printf(css,
+    "window, .background {\n"
+    "  border-radius: %dpx;\n"
+    "  overflow: hidden;\n"
+    "}\n\n"
     ".hyprmenu-window {\n"
-    "  background-color: %s;\n"
+    "  background-color: %s%s;\n"
     "  border-radius: %dpx;\n"
     "  border: %dpx solid %s;\n"
     "  padding: %dpx;\n"
+    "  overflow: hidden;\n"
     "}\n\n",
-    config->window_background_color,
+    config->outer_border_radius,
+    // Handle empty background color with transparency
+    (config->window_background_color && strlen(config->window_background_color) > 0) ? 
+      config->window_background_color : 
+      "rgba(20, 20, 20, ",
+    // Add opacity if using the default color
+    (config->window_background_color && strlen(config->window_background_color) > 0) ? 
+      "" : 
+      g_strdup_printf("%.2f)", config->window_background_opacity),
     config->outer_border_radius,
     config->outer_border_width,
     config->outer_border_color,
     config->window_padding);
-  
+
   // Main box styles
   g_string_append_printf(css,
     ".hyprmenu-main-box {\n"
     "  background-color: transparent;\n"
     "  border-radius: %dpx;\n"
     "  padding: %dpx;\n"
+    "  overflow: hidden;\n"
     "}\n\n",
     config->inner_border_radius,
     config->window_padding);
-  
+
   // Search styles
   g_string_append_printf(css,
     ".hyprmenu-search {\n"
@@ -852,7 +866,7 @@ hyprmenu_config_apply_css()
     config->search_min_height,
     config->search_left_padding,
     config->search_focus_shadow_color);
-  
+
   // Content container - new element to hold all content with border
   g_string_append_printf(css,
     ".hyprmenu-content-container {\n"
@@ -862,6 +876,7 @@ hyprmenu_config_apply_css()
     "  border-color: %s;\n"
     "  border-style: solid;\n"
     "  padding: 8px;\n"
+    "  overflow: hidden;\n"
     "}\n\n",
     config->inner_border_radius,
     config->inner_border_width,
@@ -879,7 +894,7 @@ hyprmenu_config_apply_css()
     config->grid_margin_bottom,
     config->grid_margin_start,
     config->grid_margin_end);
-  
+
   // App entry styles
   g_string_append_printf(css,
     ".hyprmenu-app-entry {\n"
@@ -899,7 +914,7 @@ hyprmenu_config_apply_css()
     config->app_entry_padding,
     config->app_entry_hover_color,
     config->app_entry_active_color);
-  
+
   // App name styles
   g_string_append_printf(css,
     ".hyprmenu-app-name {\n"
@@ -919,7 +934,7 @@ hyprmenu_config_apply_css()
     "}\n\n",
     config->app_desc_color,
     config->app_desc_font_size);
-  
+
   // Category styles
   g_string_append_printf(css,
     ".hyprmenu-category {\n"
@@ -973,8 +988,8 @@ hyprmenu_config_apply_css()
   GtkCssProvider *provider = gtk_css_provider_new();
   gtk_css_provider_load_from_data(provider, css->str, css->len);
   gtk_style_context_add_provider_for_display(gdk_display_get_default(),
-                                          GTK_STYLE_PROVIDER(provider),
-                                          GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+                                            GTK_STYLE_PROVIDER(provider),
+                                            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   g_object_unref(provider);
   g_string_free(css, TRUE);
 } 
