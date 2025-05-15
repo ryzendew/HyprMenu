@@ -3,6 +3,7 @@
 #include <gdk/wayland/gdkwayland.h>
 #include "window.h"
 #include "config.h"
+#include "hyprland.h"
 
 static void
 setup_debug_logging(void)

@@ -1,4 +1,5 @@
 #include "config.h"
+#include "hyprland.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -200,6 +201,10 @@ set_defaults(HyprMenuConfig *config)
   config->outer_border_width = 3;
   config->outer_border_color = g_strdup("#888888");
   config->outer_border_radius = 16;
+  
+  // Hyprland-specific settings
+  config->use_hyprland_corner_fix = TRUE;
+  config->hyprland_corner_radius = 16;
 }
 
 gboolean
@@ -438,7 +443,6 @@ hyprmenu_config_load()
     config->search_corner_radius = g_key_file_get_integer(keyfile, "Search", "corner_radius", NULL);
     g_free(config->search_text_color);
     config->search_text_color = g_key_file_get_string(keyfile, "Search", "text_color", NULL);
-    config->search_font_size = g_key_file_get_integer(keyfile, "Search", "font_size", NULL);
     g_free(config->search_font_family);
     config->search_font_family = g_key_file_get_string(keyfile, "Search", "font_family", NULL);
     config->search_padding = g_key_file_get_integer(keyfile, "Search", "padding", NULL);
@@ -535,6 +539,16 @@ hyprmenu_config_load()
   
     if (g_key_file_has_key(keyfile, "Behavior", "opacity", NULL)) {
       config->opacity = g_key_file_get_double(keyfile, "Behavior", "opacity", NULL);
+    }
+  }
+  
+  // Hyprland-specific settings
+  if (g_key_file_has_group(keyfile, "Hyprland")) {
+    if (g_key_file_has_key(keyfile, "Hyprland", "use_hyprland_corner_fix", NULL)) {
+      config->use_hyprland_corner_fix = g_key_file_get_boolean(keyfile, "Hyprland", "use_hyprland_corner_fix", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Hyprland", "hyprland_corner_radius", NULL)) {
+      config->hyprland_corner_radius = g_key_file_get_integer(keyfile, "Hyprland", "hyprland_corner_radius", NULL);
     }
   }
   
@@ -750,6 +764,10 @@ hyprmenu_config_save_with_error(GError **error)
   g_key_file_set_integer(keyfile, "Behavior", "blur_strength", config->blur_strength);
   g_key_file_set_double(keyfile, "Behavior", "opacity", config->opacity);
   
+  // Hyprland-specific settings
+  g_key_file_set_boolean(keyfile, "Hyprland", "use_hyprland_corner_fix", config->use_hyprland_corner_fix);
+  g_key_file_set_integer(keyfile, "Hyprland", "hyprland_corner_radius", config->hyprland_corner_radius);
+  
   // Save to file
   g_print("Writing config to: %s\n", config->config_file);
   g_autofree char *data = g_key_file_to_data(keyfile, NULL, error);
@@ -797,14 +815,12 @@ hyprmenu_config_apply_css()
   g_string_append_printf(css,
     "window, .background {\n"
     "  border-radius: %dpx;\n"
-    "  overflow: hidden;\n"
     "}\n\n"
     ".hyprmenu-window {\n"
     "  background-color: %s%s;\n"
     "  border-radius: %dpx;\n"
     "  border: %dpx solid %s;\n"
     "  padding: %dpx;\n"
-    "  overflow: hidden;\n"
     "}\n\n",
     config->outer_border_radius,
     // Handle empty background color with transparency
@@ -820,15 +836,30 @@ hyprmenu_config_apply_css()
     config->outer_border_color,
     config->window_padding);
 
+  // Content box style (wrapper for the entire content)
+  g_string_append_printf(css,
+    ".hyprmenu-content-box {\n"
+    "  background-color: transparent;\n"
+    "  border-radius: %dpx;\n"
+    "}\n\n",
+    config->outer_border_radius - 2);
+
   // Main box styles
   g_string_append_printf(css,
     ".hyprmenu-main-box {\n"
     "  background-color: transparent;\n"
     "  border-radius: %dpx;\n"
+    "  border-top-left-radius: %dpx;\n"
+    "  border-top-right-radius: %dpx;\n"
+    "  border-bottom-left-radius: %dpx;\n"
+    "  border-bottom-right-radius: %dpx;\n"
     "  padding: %dpx;\n"
-    "  overflow: hidden;\n"
     "}\n\n",
-    config->inner_border_radius,
+    config->outer_border_radius,
+    config->outer_border_radius,
+    config->outer_border_radius,
+    config->outer_border_radius,
+    config->outer_border_radius,
     config->window_padding);
 
   // Search styles
@@ -839,6 +870,10 @@ hyprmenu_config_apply_css()
     "  font-size: %dpx;\n"
     "  font-family: %s;\n"
     "  border-radius: %dpx;\n"
+    "  border-top-left-radius: %dpx;\n"
+    "  border-top-right-radius: %dpx;\n"
+    "  border-bottom-left-radius: %dpx;\n"
+    "  border-bottom-right-radius: %dpx;\n"
     "  border-width: %dpx;\n"
     "  border-color: %s;\n"
     "  border-style: solid;\n"
@@ -846,10 +881,7 @@ hyprmenu_config_apply_css()
     "  min-height: %dpx;\n"
     "  padding-left: %dpx;\n"
     "  box-shadow: none;\n"
-    "  margin-start: 4px;\n"
-    "  margin-end: 4px;\n"
-    "  margin-top: 4px;\n"
-    "  margin-bottom: 8px;\n"
+    "  margin: 4px 4px 8px 4px;\n"
     "}\n\n"
     ".hyprmenu-search:focus {\n"
     "  border-color: rgba(255,255,255,0.4);\n"
@@ -859,6 +891,10 @@ hyprmenu_config_apply_css()
     config->search_text_color,
     config->search_font_size,
     config->search_font_family,
+    config->search_corner_radius,
+    config->search_corner_radius,
+    config->search_corner_radius,
+    config->search_corner_radius,
     config->search_corner_radius,
     config->inner_border_width,
     config->inner_border_color,
@@ -876,24 +912,30 @@ hyprmenu_config_apply_css()
     "  border-color: %s;\n"
     "  border-style: solid;\n"
     "  padding: 8px;\n"
-    "  overflow: hidden;\n"
     "}\n\n",
-    config->inner_border_radius,
+    config->inner_border_radius - 2,  // Slightly smaller radius to prevent corner artifacts
     config->inner_border_width,
     config->inner_border_color);
+  
+  // Hyprland-specific styles when running under Hyprland
+  if (hyprmenu_is_hyprland() && config->use_hyprland_corner_fix) {
+    g_string_append_printf(css,
+      "/* Hyprland-specific styles to fix corner artifacts */\n"
+      "window, .background {\n"
+      "  border-radius: %dpx;\n"
+      "}\n\n",
+      config->hyprland_corner_radius);
+  }
   
   // App grid styles
   g_string_append_printf(css,
     ".hyprmenu-app-grid {\n"
-    "  margin-top: %dpx;\n"
-    "  margin-bottom: %dpx;\n"
-    "  margin-start: %dpx;\n"
-    "  margin-end: %dpx;\n"
+    "  margin: %dpx %dpx %dpx %dpx;\n"
     "}\n\n",
     config->grid_margin_top,
+    config->grid_margin_end,
     config->grid_margin_bottom,
-    config->grid_margin_start,
-    config->grid_margin_end);
+    config->grid_margin_start);
 
   // App entry styles
   g_string_append_printf(css,

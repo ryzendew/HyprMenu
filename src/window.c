@@ -5,6 +5,7 @@
 #include <gdk/gdk.h>
 #include <gdk/wayland/gdkwayland.h>
 #include "app_grid.h"
+#include "hyprland.h"
 
 // Add this struct definition at the top of the file, after the includes
 typedef struct {
@@ -529,31 +530,43 @@ hyprmenu_window_init (HyprMenuWindow *self)
   /* Enable blur for Hyprland */
   GdkSurface *surface = gtk_native_get_surface(GTK_NATIVE(self));
   if (GDK_IS_WAYLAND_SURFACE(surface)) {
-    // Set window background to transparent to allow blur
+    // Set window background to transparent to allow blur and enable native corner rounding
     GtkStyleContext *style_context = gtk_widget_get_style_context(GTK_WIDGET(self));
     GtkCssProvider *provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(provider, 
+                                   "window, .background { "
+                                   "  border-radius: 16px; "
+                                   "  box-shadow: none; "
+                                   "  background-color: transparent; "
+                                   "}\n"
                                    ".hyprmenu-window { "
                                    "  background-color: rgba(0, 0, 0, 0.0); "
                                    "  border-radius: 16px; "
-                                   "  overflow: hidden; "
+                                   "}\n"
+                                   ".hyprmenu-content-box { "
+                                   "  background-color: transparent; "
+                                   "  border-radius: 14px; "
                                    "}\n"
                                    ".hyprmenu-main-box { "
                                    "  border-radius: 12px; "
-                                   "  overflow: hidden; "
                                    "}\n"
-                                   "window, .background { "
-                                   "  border-radius: 16px; "
-                                   "  overflow: hidden; "
-                                   "}"
+                                   ".hyprmenu-content-container { "
+                                   "  border-radius: 12px; "
+                                   "}\n"
                                    ,
                                    -1);
     gtk_style_context_add_provider(style_context,
                                   GTK_STYLE_PROVIDER(provider),
-                                  GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+                                  GTK_STYLE_PROVIDER_PRIORITY_USER);
     g_object_unref(provider);
     
-    g_message("Enabled native Hyprland blur support with improved corner radius");
+    // Apply Hyprland-specific window properties for better corner rendering
+    if (hyprmenu_is_hyprland()) {
+      g_message("Detected Hyprland: applying optimized corner rendering");
+      hyprmenu_apply_hyprland_hints(surface);
+    }
+    
+    g_message("Enabled native blur support with improved corner radius");
   }
   
   /* Position window based on menu_position config */
@@ -638,14 +651,15 @@ hyprmenu_window_init (HyprMenuWindow *self)
   
   /* Create main container (vertical box) */
   GtkWidget *v_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-  gtk_widget_set_margin_start(v_box, config->window_padding);
-  gtk_widget_set_margin_end(v_box, config->window_padding);
-  gtk_widget_set_margin_top(v_box, config->window_padding);
-  gtk_widget_set_margin_bottom(v_box, config->window_padding);
+  gtk_widget_set_margin_start(v_box, config->window_padding + 2);
+  gtk_widget_set_margin_end(v_box, config->window_padding + 2);
+  gtk_widget_set_margin_top(v_box, config->window_padding + 2);
+  gtk_widget_set_margin_bottom(v_box, config->window_padding + 2);
   gtk_widget_set_hexpand(v_box, TRUE);
   gtk_widget_set_vexpand(v_box, TRUE);
   gtk_widget_set_halign(v_box, GTK_ALIGN_FILL);
   gtk_widget_set_valign(v_box, GTK_ALIGN_FILL);
+  gtk_widget_add_css_class(v_box, "hyprmenu-content-box");
   gtk_window_set_child(GTK_WINDOW(self), v_box);
   
   /* Create content area */
@@ -667,7 +681,7 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_widget_add_css_class(self->search_entry, "hyprmenu-search");
   gtk_widget_set_hexpand(self->search_entry, TRUE);
   gtk_widget_set_halign(self->search_entry, GTK_ALIGN_FILL);
-  int search_extra_pad = 8;
+  int search_extra_pad = 10;
   gtk_widget_set_margin_start(self->search_entry, config->window_padding + search_extra_pad);
   gtk_widget_set_margin_end(self->search_entry, config->window_padding + search_extra_pad);
   gtk_widget_set_margin_top(self->search_entry, search_extra_pad);
@@ -680,10 +694,10 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_widget_set_hexpand(content_container, TRUE);
   gtk_widget_set_vexpand(content_container, TRUE);
   gtk_widget_set_halign(content_container, GTK_ALIGN_FILL);
-  gtk_widget_set_margin_start(content_container, config->window_padding + 10);
-  gtk_widget_set_margin_end(content_container, config->window_padding + 10);
-  gtk_widget_set_margin_top(content_container, 4);
-  gtk_widget_set_margin_bottom(content_container, 12); // Increased space between grid and system buttons
+  gtk_widget_set_margin_start(content_container, config->window_padding + 12);
+  gtk_widget_set_margin_end(content_container, config->window_padding + 12);
+  gtk_widget_set_margin_top(content_container, 12);
+  gtk_widget_set_margin_bottom(content_container, 16); // Increased space between grid and system buttons
   gtk_box_append(GTK_BOX(self->main_box), content_container);
 
   // App grid

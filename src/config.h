@@ -153,6 +153,10 @@ typedef struct _HyprMenuConfig {
   gboolean blur_background;
   int blur_strength;
   double opacity;
+  
+  // Hyprland-specific settings
+  gboolean use_hyprland_corner_fix;
+  int hyprland_corner_radius;
 } HyprMenuConfig;
 
 // Global config instance
