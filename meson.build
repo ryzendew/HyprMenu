@@ -29,8 +29,6 @@ sources = [
   'src/app_grid.c',
   'src/category_list.c',
   'src/app_entry.c',
-  'src/recent_apps.c',
-  'src/pinned_apps.c',
   'src/config.c',
   'src/list_view.c',
 ]
@@ -41,8 +39,6 @@ headers = [
   'src/app_grid.h',
   'src/category_list.h',
   'src/app_entry.h',
-  'src/recent_apps.h',
-  'src/pinned_apps.h',
   'src/config.h',
   'src/list_view.h',
 ]

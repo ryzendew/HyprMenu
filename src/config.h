@@ -141,7 +141,6 @@ typedef struct _HyprMenuConfig {
   gboolean close_on_super_key;
   gboolean close_on_app_launch;
   gboolean focus_search_on_open;
-  int max_recent_apps;
   gboolean close_on_escape;
   gboolean close_on_focus_out;
   gboolean show_categories;
@@ -154,10 +153,6 @@ typedef struct _HyprMenuConfig {
   gboolean blur_background;
   int blur_strength;
   double opacity;
-  
-  // Section titles
-  char *recent_apps_title;
-  char *pinned_apps_title;
 } HyprMenuConfig;
 
 // Global config instance

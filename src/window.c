@@ -5,8 +5,6 @@
 #include <gdk/gdk.h>
 #include <gdk/wayland/gdkwayland.h>
 #include "app_grid.h"
-#include "recent_apps.h"
-#include "pinned_apps.h"
 
 // Add this struct definition at the top of the file, after the includes
 typedef struct {
@@ -643,48 +641,25 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_widget_set_margin_bottom(self->search_entry, search_extra_pad);
   gtk_box_append(GTK_BOX(self->main_box), self->search_entry);
   
-  // Pinned apps section
-  HyprMenuPinnedApps *pinned_apps = hyprmenu_pinned_apps_new();
-  self->pinned_apps = GTK_WIDGET(pinned_apps);
-  gtk_widget_add_css_class(self->pinned_apps, "hyprmenu-pinned-apps");
-  gtk_widget_set_margin_start(self->pinned_apps, config->window_padding);
-  gtk_widget_set_margin_end(self->pinned_apps, config->window_padding);
-  gtk_widget_set_margin_top(self->pinned_apps, 4);
-  gtk_widget_set_margin_bottom(self->pinned_apps, 4);
-  gtk_box_append(GTK_BOX(self->main_box), self->pinned_apps);
+  // Content container with border
+  GtkWidget *content_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_add_css_class(content_container, "hyprmenu-content-container");
+  gtk_widget_set_hexpand(content_container, TRUE);
+  gtk_widget_set_vexpand(content_container, TRUE);
+  gtk_widget_set_halign(content_container, GTK_ALIGN_FILL);
+  gtk_widget_set_margin_start(content_container, config->window_padding + 10);
+  gtk_widget_set_margin_end(content_container, config->window_padding + 10);
+  gtk_widget_set_margin_top(content_container, 4);
+  gtk_widget_set_margin_bottom(content_container, 12); // Increased space between grid and system buttons
+  gtk_box_append(GTK_BOX(self->main_box), content_container);
   
-  // Initialize pinned apps display
-  hyprmenu_pinned_apps_refresh(pinned_apps);
-  
-  // Recent apps section
-  HyprMenuRecentApps *recent_apps = hyprmenu_recent_apps_new();
-  self->recent_apps = GTK_WIDGET(recent_apps);
-  gtk_widget_add_css_class(self->recent_apps, "hyprmenu-recent-apps");
-  gtk_widget_set_margin_start(self->recent_apps, config->window_padding);
-  gtk_widget_set_margin_end(self->recent_apps, config->window_padding);
-  gtk_widget_set_margin_top(self->recent_apps, 4);
-  gtk_widget_set_margin_bottom(self->recent_apps, 4);
-  gtk_box_append(GTK_BOX(self->main_box), self->recent_apps);
-  
-  // Initialize recent apps display
-  hyprmenu_recent_apps_refresh(recent_apps);
-  
-  // Add a separator between recent apps and all apps
-  GtkWidget *separator = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-  gtk_widget_add_css_class(separator, "hyprmenu-separator");
-  gtk_widget_set_margin_start(separator, config->window_padding);
-  gtk_widget_set_margin_end(separator, config->window_padding);
-  gtk_widget_set_margin_top(separator, 2);
-  gtk_widget_set_margin_bottom(separator, 6);
-  gtk_box_append(GTK_BOX(self->main_box), separator);
-
   // App grid
   self->app_grid = GTK_WIDGET(hyprmenu_app_grid_new());
   gtk_widget_add_css_class(self->app_grid, "hyprmenu-app-grid");
   gtk_widget_set_hexpand(self->app_grid, TRUE);
   gtk_widget_set_halign(self->app_grid, GTK_ALIGN_FILL);
   gtk_widget_set_vexpand(self->app_grid, TRUE);
-  gtk_box_append(GTK_BOX(self->main_box), self->app_grid);
+  gtk_box_append(GTK_BOX(content_container), self->app_grid);
   
   // Set grid columns if in grid view
   if (config->grid_hexpand) {
@@ -707,8 +682,10 @@ hyprmenu_window_init (HyprMenuWindow *self)
   self->system_buttons_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
   gtk_widget_add_css_class(self->system_buttons_box, "hyprmenu-system-buttons");
   gtk_widget_set_halign(self->system_buttons_box, GTK_ALIGN_CENTER);
-  gtk_widget_set_margin_top(self->system_buttons_box, 6);
-  gtk_widget_set_margin_bottom(self->system_buttons_box, 0);
+  gtk_widget_set_margin_top(self->system_buttons_box, 4);
+  gtk_widget_set_margin_bottom(self->system_buttons_box, 8);
+  gtk_widget_set_margin_start(self->system_buttons_box, 4);
+  gtk_widget_set_margin_end(self->system_buttons_box, 4);
   
   /* Add system buttons */
   GtkWidget *logout_button = create_system_button("system-log-out-symbolic", "Logout", G_CALLBACK(on_logout_clicked), self);

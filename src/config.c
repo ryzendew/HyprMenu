@@ -178,7 +178,6 @@ set_defaults(HyprMenuConfig *config)
   config->close_on_super_key = TRUE;
   config->close_on_app_launch = TRUE;
   config->focus_search_on_open = TRUE;
-  config->max_recent_apps = 5;
   config->close_on_escape = TRUE;
   config->close_on_focus_out = TRUE;
   config->show_categories = TRUE;
@@ -190,11 +189,7 @@ set_defaults(HyprMenuConfig *config)
   config->show_shadow = TRUE;
   config->blur_background = TRUE;
   config->blur_strength = 5;
-  config->opacity = 0.85;
-  
-  // Section titles
-  config->recent_apps_title = g_strdup("Recent Apps");
-  config->pinned_apps_title = g_strdup("Pinned Apps");
+  config->opacity = 1.0;
   
   // File paths
   config->config_dir = g_build_filename(g_get_home_dir(), ".config", "hyprmenu", NULL);
@@ -240,39 +235,34 @@ hyprmenu_config_free()
     return;
   }
   
-  // Free all string fields
+  // Free allocated strings
+  g_free(config->config_dir);
+  g_free(config->config_file);
+  g_free(config->css_file);
+  g_free(config->window_border_color);
+  g_free(config->window_background_color);
   g_free(config->window_halign);
   g_free(config->window_valign);
-  g_free(config->window_background_color);
-  g_free(config->inner_border_color);
   g_free(config->window_shadow_color);
-  
-  // Grid options
+  g_free(config->inner_border_color);
+  g_free(config->outer_border_color);
   g_free(config->grid_halign);
   g_free(config->grid_valign);
   g_free(config->grid_item_border_color);
   g_free(config->grid_item_background_color);
-  
-  // List options
-  g_free(config->list_halign);
-  g_free(config->list_valign);
   g_free(config->list_item_border_color);
   g_free(config->list_item_background_color);
-  
-  // AppEntry options
+  g_free(config->list_halign);
+  g_free(config->list_valign);
   g_free(config->app_icon_background_color);
   g_free(config->app_name_color);
   g_free(config->app_desc_color);
   g_free(config->app_entry_hover_color);
   g_free(config->app_entry_active_color);
-  
-  // Category options
   g_free(config->category_background_color);
   g_free(config->category_text_color);
   g_free(config->category_font_family);
   g_free(config->category_separator_color);
-  
-  // Search options
   g_free(config->search_background_color);
   g_free(config->search_text_color);
   g_free(config->search_font_family);
@@ -280,22 +270,12 @@ hyprmenu_config_free()
   g_free(config->search_icon_color);
   g_free(config->search_focus_border_color);
   g_free(config->search_focus_shadow_color);
-  
-  // SystemButton options
   g_free(config->system_button_background_color);
   g_free(config->system_button_icon_color);
   g_free(config->system_button_hover_color);
   g_free(config->system_button_active_color);
   
-  // Section titles
-  g_free(config->recent_apps_title);
-  g_free(config->pinned_apps_title);
-  
-  // File paths
-  g_free(config->config_dir);
-  g_free(config->config_file);
-  g_free(config->css_file);
-  
+  // Free the config struct itself
   g_free(config);
   config = NULL;
 }
@@ -493,44 +473,69 @@ hyprmenu_config_load()
   
   // Behavior options
   if (g_key_file_has_group(keyfile, "Behavior")) {
-    config->close_on_click_outside = g_key_file_get_boolean(keyfile, "Behavior", "close_on_click_outside", NULL);
-    config->close_on_super_key = g_key_file_get_boolean(keyfile, "Behavior", "close_on_super_key", NULL);
-    config->close_on_app_launch = g_key_file_get_boolean(keyfile, "Behavior", "close_on_app_launch", NULL);
-    config->focus_search_on_open = g_key_file_get_boolean(keyfile, "Behavior", "focus_search_on_open", NULL);
-    config->max_recent_apps = g_key_file_get_integer(keyfile, "Behavior", "max_recent_apps", NULL);
-    config->close_on_escape = g_key_file_get_boolean(keyfile, "Behavior", "close_on_escape", NULL);
-    config->close_on_focus_out = g_key_file_get_boolean(keyfile, "Behavior", "close_on_focus_out", NULL);
-    config->show_categories = g_key_file_get_boolean(keyfile, "Behavior", "show_categories", NULL);
-    config->show_descriptions = g_key_file_get_boolean(keyfile, "Behavior", "show_descriptions", NULL);
-    config->show_icons = g_key_file_get_boolean(keyfile, "Behavior", "show_icons", NULL);
-    config->show_search = g_key_file_get_boolean(keyfile, "Behavior", "show_search", NULL);
-    config->show_scrollbar = g_key_file_get_boolean(keyfile, "Behavior", "show_scrollbar", NULL);
-    config->show_border = g_key_file_get_boolean(keyfile, "Behavior", "show_border", NULL);
-    config->show_shadow = g_key_file_get_boolean(keyfile, "Behavior", "show_shadow", NULL);
-    config->blur_background = g_key_file_get_boolean(keyfile, "Behavior", "blur_background", NULL);
-    config->blur_strength = g_key_file_get_integer(keyfile, "Behavior", "blur_strength", NULL);
-    config->opacity = g_key_file_get_double(keyfile, "Behavior", "opacity", NULL);
-  }
-  
-  // Get or set default for show_shadow
-  if (g_key_file_has_key(keyfile, "Behavior", "show_shadow", NULL)) {
-    config->show_shadow = g_key_file_get_boolean(keyfile, "Behavior", "show_shadow", NULL);
-  }
-  
-  // Get or set default for opacity
-  if (g_key_file_has_key(keyfile, "Behavior", "opacity", NULL)) {
-    config->opacity = g_key_file_get_double(keyfile, "Behavior", "opacity", NULL);
-  }
-  
-  // Get or set default for section titles
-  if (g_key_file_has_key(keyfile, "Interface", "recent_apps_title", NULL)) {
-    g_free(config->recent_apps_title);
-    config->recent_apps_title = g_key_file_get_string(keyfile, "Interface", "recent_apps_title", NULL);
-  }
-  
-  if (g_key_file_has_key(keyfile, "Interface", "pinned_apps_title", NULL)) {
-    g_free(config->pinned_apps_title);
-    config->pinned_apps_title = g_key_file_get_string(keyfile, "Interface", "pinned_apps_title", NULL);
+    if (g_key_file_has_key(keyfile, "Behavior", "close_on_click_outside", NULL)) {
+      config->close_on_click_outside = g_key_file_get_boolean(keyfile, "Behavior", "close_on_click_outside", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "close_on_super_key", NULL)) {
+      config->close_on_super_key = g_key_file_get_boolean(keyfile, "Behavior", "close_on_super_key", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "close_on_app_launch", NULL)) {
+      config->close_on_app_launch = g_key_file_get_boolean(keyfile, "Behavior", "close_on_app_launch", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "focus_search_on_open", NULL)) {
+      config->focus_search_on_open = g_key_file_get_boolean(keyfile, "Behavior", "focus_search_on_open", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "close_on_escape", NULL)) {
+      config->close_on_escape = g_key_file_get_boolean(keyfile, "Behavior", "close_on_escape", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "close_on_focus_out", NULL)) {
+      config->close_on_focus_out = g_key_file_get_boolean(keyfile, "Behavior", "close_on_focus_out", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "show_categories", NULL)) {
+      config->show_categories = g_key_file_get_boolean(keyfile, "Behavior", "show_categories", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "show_descriptions", NULL)) {
+      config->show_descriptions = g_key_file_get_boolean(keyfile, "Behavior", "show_descriptions", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "show_icons", NULL)) {
+      config->show_icons = g_key_file_get_boolean(keyfile, "Behavior", "show_icons", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "show_search", NULL)) {
+      config->show_search = g_key_file_get_boolean(keyfile, "Behavior", "show_search", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "show_scrollbar", NULL)) {
+      config->show_scrollbar = g_key_file_get_boolean(keyfile, "Behavior", "show_scrollbar", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "show_border", NULL)) {
+      config->show_border = g_key_file_get_boolean(keyfile, "Behavior", "show_border", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "show_shadow", NULL)) {
+      config->show_shadow = g_key_file_get_boolean(keyfile, "Behavior", "show_shadow", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "blur_background", NULL)) {
+      config->blur_background = g_key_file_get_boolean(keyfile, "Behavior", "blur_background", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "blur_strength", NULL)) {
+      config->blur_strength = g_key_file_get_integer(keyfile, "Behavior", "blur_strength", NULL);
+    }
+    
+    if (g_key_file_has_key(keyfile, "Behavior", "opacity", NULL)) {
+      config->opacity = g_key_file_get_double(keyfile, "Behavior", "opacity", NULL);
+    }
   }
   
   // Save config back if any missing options
@@ -732,7 +737,6 @@ hyprmenu_config_save_with_error(GError **error)
   g_key_file_set_boolean(keyfile, "Behavior", "close_on_super_key", config->close_on_super_key);
   g_key_file_set_boolean(keyfile, "Behavior", "close_on_app_launch", config->close_on_app_launch);
   g_key_file_set_boolean(keyfile, "Behavior", "focus_search_on_open", config->focus_search_on_open);
-  g_key_file_set_integer(keyfile, "Behavior", "max_recent_apps", config->max_recent_apps);
   g_key_file_set_boolean(keyfile, "Behavior", "close_on_escape", config->close_on_escape);
   g_key_file_set_boolean(keyfile, "Behavior", "close_on_focus_out", config->close_on_focus_out);
   g_key_file_set_boolean(keyfile, "Behavior", "show_categories", config->show_categories);
@@ -745,10 +749,6 @@ hyprmenu_config_save_with_error(GError **error)
   g_key_file_set_boolean(keyfile, "Behavior", "blur_background", config->blur_background);
   g_key_file_set_integer(keyfile, "Behavior", "blur_strength", config->blur_strength);
   g_key_file_set_double(keyfile, "Behavior", "opacity", config->opacity);
-  
-  // Add section titles
-  g_key_file_set_string(keyfile, "Interface", "recent_apps_title", config->recent_apps_title);
-  g_key_file_set_string(keyfile, "Interface", "pinned_apps_title", config->pinned_apps_title);
   
   // Save to file
   g_print("Writing config to: %s\n", config->config_file);
@@ -793,122 +793,145 @@ hyprmenu_config_apply_css()
   if (!config) return;
   GString *css = g_string_new("");
 
-  // Outer border (window)
+  // Create CSS string
   g_string_append_printf(css,
-    "window {\n"
+    ".hyprmenu-window {\n"
     "  background-color: %s;\n"
-    "  border: %dpx solid %s;\n"
     "  border-radius: %dpx;\n"
-    "  box-shadow: 0 2px 10px rgba(0,0,0,0.3);\n"
+    "  border: %dpx solid %s;\n"
+    "  padding: %dpx;\n"
     "}\n\n",
     config->window_background_color,
+    config->outer_border_radius,
     config->outer_border_width,
     config->outer_border_color,
-    config->outer_border_radius);
-
-  // Main box border (inner border)
+    config->window_padding);
+  
+  // Main box styles
   g_string_append_printf(css,
     ".hyprmenu-main-box {\n"
-    "  border-width: %dpx;\n"
-    "  border-color: %s;\n"
-    "  border-style: solid;\n"
+    "  background-color: transparent;\n"
     "  border-radius: %dpx;\n"
-    "  background: rgba(0,0,0,0.01); /* force border rendering */\n"
+    "  padding: %dpx;\n"
     "}\n\n",
-    config->inner_border_width,
-    config->inner_border_color,
-    config->inner_border_radius);
-
-  // Search bar styles
+    config->inner_border_radius,
+    config->window_padding);
+  
+  // Search styles
   g_string_append_printf(css,
     ".hyprmenu-search {\n"
     "  background-color: %s;\n"
-    "  border-radius: %dpx;\n"
-    "  min-height: %dpx;\n"
-    "  padding: %dpx %dpx %dpx %dpx;\n"
-    "  font-size: %dpx;\n"
     "  color: %s;\n"
-    "  border: 1px solid %s;\n"
-    "  margin: 0;\n"
-    "  box-sizing: border-box;\n"
+    "  font-size: %dpx;\n"
+    "  font-family: %s;\n"
+    "  border-radius: %dpx;\n"
+    "  border-width: %dpx;\n"
+    "  border-color: %s;\n"
+    "  border-style: solid;\n"
+    "  padding: %dpx;\n"
+    "  min-height: %dpx;\n"
+    "  padding-left: %dpx;\n"
+    "  box-shadow: none;\n"
+    "  margin-start: 4px;\n"
+    "  margin-end: 4px;\n"
+    "  margin-top: 4px;\n"
+    "  margin-bottom: 8px;\n"
+    "}\n\n"
+    ".hyprmenu-search:focus {\n"
+    "  border-color: rgba(255,255,255,0.4);\n"
+    "  box-shadow: 0 0 3px %s;\n"
     "}\n\n",
     config->search_background_color,
-    config->search_corner_radius,
-    config->search_min_height,
-    config->search_padding,
-    config->search_padding,
-    config->search_padding,
-    config->search_left_padding,
-    config->search_font_size,
     config->search_text_color,
-    config->search_focus_border_color);
-
-  // Grid item styles
+    config->search_font_size,
+    config->search_font_family,
+    config->search_corner_radius,
+    config->inner_border_width,
+    config->inner_border_color,
+    config->search_padding,
+    config->search_min_height,
+    config->search_left_padding,
+    config->search_focus_shadow_color);
+  
+  // Content container - new element to hold all content with border
   g_string_append_printf(css,
-    ".grid-item {\n"
-    "  background-color: %s;\n"
+    ".hyprmenu-content-container {\n"
+    "  background-color: transparent;\n"
     "  border-radius: %dpx;\n"
-    "  border: %dpx solid %s;\n"
-    "  width: %dpx;\n"
-    "  height: %dpx;\n"
-    "  min-width: %dpx;\n"
-    "  min-height: %dpx;\n"
-    "  margin: 0;\n"
+    "  border-width: %dpx;\n"
+    "  border-color: %s;\n"
+    "  border-style: solid;\n"
+    "  padding: 8px;\n"
     "}\n\n",
-    config->grid_item_background_color,
+    config->inner_border_radius,
+    config->inner_border_width,
+    config->inner_border_color);
+  
+  // App grid styles
+  g_string_append_printf(css,
+    ".hyprmenu-app-grid {\n"
+    "  margin-top: %dpx;\n"
+    "  margin-bottom: %dpx;\n"
+    "  margin-start: %dpx;\n"
+    "  margin-end: %dpx;\n"
+    "}\n\n",
+    config->grid_margin_top,
+    config->grid_margin_bottom,
+    config->grid_margin_start,
+    config->grid_margin_end);
+  
+  // App entry styles
+  g_string_append_printf(css,
+    ".hyprmenu-app-entry {\n"
+    "  background-color: transparent;\n"
+    "  border-radius: %dpx;\n"
+    "  padding: %dpx;\n"
+    "  border: none;\n"
+    "  box-shadow: none;\n"
+    "}\n\n"
+    ".hyprmenu-app-entry:hover {\n"
+    "  background-color: %s;\n"
+    "}\n\n"
+    ".hyprmenu-app-entry:active {\n"
+    "  background-color: %s;\n"
+    "}\n\n",
     config->grid_item_corner_radius,
-    config->grid_item_border_width,
-    config->grid_item_border_color,
-    config->grid_item_size,
-    config->grid_item_size,
-    config->grid_item_size,
-    config->grid_item_size);
+    config->app_entry_padding,
+    config->app_entry_hover_color,
+    config->app_entry_active_color);
+  
+  // App name styles
   g_string_append_printf(css,
-    ".hyprmenu-app-grid flowboxchild {\n"
-    "  padding: 0;\n"
-    "  margin: 0;\n"
-    "  width: %dpx;\n"
-    "  height: %dpx;\n"
-    "  min-width: %dpx;\n"
-    "  min-height: %dpx;\n"
-    "}\n\n",
-    config->grid_item_size,
-    config->grid_item_size,
-    config->grid_item_size,
-    config->grid_item_size);
-
-  // List row styles
-  g_string_append_printf(css,
-    ".hyprmenu-list-row {\n"
-    "  background-color: %s;\n"
-    "  border-radius: %dpx;\n"
-    "  padding: 8px 12px;\n"
-    "  margin: 2px 0px;\n"
-    "  border: 1px solid %s;\n"
-    "  min-height: %dpx;\n"
-    "}\n\n",
-    config->list_item_background_color,
-    config->list_item_corner_radius,
-    config->list_item_border_color,
-    config->list_item_size);
-
-  // App name and description
-  g_string_append_printf(css,
-    ".app-name {\n"
+    ".hyprmenu-app-name {\n"
     "  color: %s;\n"
     "  font-size: %dpx;\n"
+    "  font-weight: bold;\n"
     "}\n\n",
     config->app_name_color,
     config->app_name_font_size);
+  
+  // App description styles
   g_string_append_printf(css,
-    ".app-description {\n"
+    ".hyprmenu-app-description {\n"
     "  color: %s;\n"
     "  font-size: %dpx;\n"
+    "  opacity: 0.8;\n"
     "}\n\n",
     config->app_desc_color,
     config->app_desc_font_size);
-
-  // Category label
+  
+  // Category styles
+  g_string_append_printf(css,
+    ".hyprmenu-category {\n"
+    "  background-color: %s;\n"
+    "  border-radius: %dpx;\n"
+    "  padding: %dpx;\n"
+    "}\n\n",
+    config->category_background_color,
+    config->category_corner_radius,
+    config->category_padding);
+  
+  // Category title styles
   g_string_append_printf(css,
     ".hyprmenu-category-title {\n"
     "  color: %s;\n"
@@ -939,53 +962,19 @@ hyprmenu_config_apply_css()
     "  background: rgba(255,255,255,0.08);\n"
     "}\n\n");
 
-  // Recent apps styles
+  // Add separator style
   g_string_append(css,
-    ".recent-apps {\n"
-    "  background-color: rgba(40,40,50,0.4);\n"
-    "  border-radius: 8px;\n"
-    "  padding: 8px;\n"
-    "  margin: 4px 0;\n"
-    "}\n\n"
-    ".recent-apps label {\n"
-    "  color: #ffffff;\n"
-    "  font-size: 14px;\n"
-    "  font-weight: bold;\n"
-    "  margin-bottom: 6px;\n"
-    "}\n\n"
     ".hyprmenu-separator {\n"
     "  background-color: rgba(255,255,255,0.15);\n"
     "  min-height: 1px;\n"
     "}\n\n");
 
-  // Pinned apps styles
-  g_string_append(css,
-    ".pinned-apps {\n"
-    "  background-color: rgba(40,40,50,0.4);\n"
-    "  border-radius: 8px;\n"
-    "  padding: 8px;\n"
-    "  margin: 4px 0;\n"
-    "}\n\n"
-    ".pinned-apps label {\n"
-    "  color: #ffffff;\n"
-    "  margin-bottom: 6px;\n"
-    "}\n\n"
-    ".menu-button {\n"
-    "  background-color: rgba(60,60,70,0.8);\n"
-    "  color: #ffffff;\n"
-    "  border-radius: 4px;\n"
-    "  padding: 6px 12px;\n"
-    "}\n\n"
-    ".menu-button:hover {\n"
-    "  background-color: rgba(80,80,90,0.9);\n"
-    "}\n\n");
-
   // Apply CSS
   GtkCssProvider *provider = gtk_css_provider_new();
-  gtk_css_provider_load_from_string(provider, css->str);
+  gtk_css_provider_load_from_data(provider, css->str, css->len);
   gtk_style_context_add_provider_for_display(gdk_display_get_default(),
-                                            GTK_STYLE_PROVIDER(provider),
-                                            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+                                          GTK_STYLE_PROVIDER(provider),
+                                          GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   g_object_unref(provider);
   g_string_free(css, TRUE);
 } 
