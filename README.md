@@ -3,6 +3,7 @@
 A highly customizable, modern application launcher for Wayland compositors (Hyprland, Sway, etc.)
 
 ## Features
+
 - **Fully customizable appearance** via `hyprmenu.conf`
 - **Outer and inner borders**: independently style the menu's outer and inner borders
 - **Grid and list views**: switchable, with configurable columns, spacing, and item size
@@ -15,9 +16,11 @@ A highly customizable, modern application launcher for Wayland compositors (Hypr
 - **Extensive color and spacing options**
 
 ## Configuration
+
 All options are set in `~/.config/hyprmenu/hyprmenu.conf`. Sections and keys are alphabetical for clarity.
 
 ### Example: Borders
+
 ```ini
 [Window]
 outer_border_width=3
@@ -29,6 +32,7 @@ inner_border_radius=12
 ```
 
 ### Major Sections and Options
+
 - **[Window]**: Outer/inner borders, background, padding, shadow, alignment
 - **[Grid]**: Grid columns, item size, spacing, margins, alignment
 - **[List]**: List item size, spacing, margins, alignment
@@ -41,9 +45,11 @@ inner_border_radius=12
 - **[Layout]**: Window size, margins, position, offsets
 
 ### System Buttons: Flat/Icon-Only
+
 System buttons are styled to be flat and icon-only by default. You can further customize their color and hover effect in the `[SystemButton]` section.
 
 ### Most Used Apps
+
 HyprMenu tracks which applications you launch and displays your most frequently used apps at the top of the menu for quick access. You can configure the number of most used apps to display:
 
 ```ini
@@ -52,6 +58,7 @@ max_recent_apps=5
 ```
 
 ### Example Config Snippet
+
 ```ini
 [Window]
 outer_border_width=3
@@ -82,6 +89,7 @@ max_recent_apps=5
 ```
 
 ## Customization Tips
+
 - **Change border colors/thickness**: Edit `outer_border_*` and `inner_border_*` in `[Window]`.
 - **Switch between grid/list**: Use the toggle button or set defaults in `[Grid]`/`[List]`.
 - **Make system buttons flat**: Use the default config or set `background_color=transparent` and `corner_radius=0` in `[SystemButton]`.
@@ -90,6 +98,7 @@ max_recent_apps=5
 - **Customize most used apps**: Change the number of apps shown in the "Most Used Apps" section by setting `max_recent_apps` in `[Behavior]`.
 
 ## Getting Started
+
 1. Copy or generate a config: `~/.config/hyprmenu/hyprmenu.conf`
 2. Edit the config to your liking (see above for options)
 3. Run HyprMenu and enjoy your custom launcher!
@@ -137,6 +146,77 @@ sudo ./build.sh --install
 
 After building, the application will be installed automatically.
 
+### NixOS
+
+1. Add `hyprmenu` as a flake input
+
+In your top-level `flake.nix`:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    hyprmenu.url = "github:ryzendew/HyprMenu";
+  };
+
+  outputs = { self, nixpkgs, hyprmenu, ... }@inputs: {
+    nixosConfigurations.your-hostname = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        {
+          environment.systemPackages = [ hyprmenu.packages.${system}.default ];
+        }
+        # ... your other modules ...
+      ];
+    };
+  };
+}
+```
+
+---
+
+2. Use in Home Manager
+
+To add `hyprmenu` to your Home Manager config:
+
+```nix
+{
+  programs.home-manager.enable = true;
+
+  home.packages = [
+    inputs.hyprmenu.packages.${pkgs.system}.default
+  ];
+}
+```
+
+> Tip: You may need to pass `inputs` and `pkgs` into your Home Manager module depending on how you’ve structured your flake.
+
+---
+
+3. Run directly
+
+You can run `hyprmenu` directly with:
+
+```sh
+nix run github:ryzendew/HyprMenu
+```
+
+---
+
+4. Add to systemPackages
+
+If you’re using NixOS and want to install `HyprMenu` system-wide:
+
+```nix
+{
+  environment.systemPackages = with pkgs; [
+    hyprmenu
+  ];
+}
+```
+
+> Make sure you’ve added the flake input and forwarded the `hyprmenu` package as shown above.
+
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License.
