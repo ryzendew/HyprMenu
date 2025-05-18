@@ -70,6 +70,8 @@ typedef struct _HyprMenuConfig {
   int grid_item_border_width;
   char *grid_item_border_color;
   char *grid_item_background_color;
+  double grid_opacity;
+  double grid_item_opacity;
 
   // List options
   int list_item_size;
@@ -86,6 +88,8 @@ typedef struct _HyprMenuConfig {
   int list_margin_end;
   int list_margin_top;
   int list_margin_bottom;
+  double list_opacity;
+  double list_item_opacity;
   
   // AppEntry options
   int app_icon_size;
@@ -98,6 +102,10 @@ typedef struct _HyprMenuConfig {
   int app_entry_padding;
   char *app_entry_hover_color;
   char *app_entry_active_color;
+  double app_entry_opacity;
+  double app_icon_opacity;
+  double app_name_opacity;
+  double app_desc_opacity;
   
   // Category options
   char *category_background_color;
@@ -109,6 +117,8 @@ typedef struct _HyprMenuConfig {
   int category_padding;
   gboolean category_show_separators;
   char *category_separator_color;
+  double category_opacity;
+  double category_title_opacity;
   
   // Search options
   char *search_background_color;
@@ -126,7 +136,10 @@ typedef struct _HyprMenuConfig {
   char *search_icon_color;
   char *search_focus_border_color;
   char *search_focus_shadow_color;
-
+  double search_opacity;
+  double search_text_opacity;
+  double search_icon_opacity;
+  
   // SystemButton options
   char *system_button_background_color;
   char *system_button_icon_color;
@@ -135,7 +148,9 @@ typedef struct _HyprMenuConfig {
   int system_button_corner_radius;
   int system_button_size;
   int system_button_spacing;
-
+  double system_button_opacity;
+  double system_button_icon_opacity;
+  
   // Behavior options
   gboolean close_on_click_outside;
   gboolean close_on_super_key;
@@ -153,6 +168,7 @@ typedef struct _HyprMenuConfig {
   gboolean blur_background;
   int blur_strength;
   double opacity;
+  int max_recent_apps;  // Maximum number of recent apps to show
   
   // Hyprland-specific settings
   gboolean use_hyprland_corner_fix;
