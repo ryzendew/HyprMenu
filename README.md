@@ -1,128 +1,141 @@
 # HyprMenu
 
-A highly customizable, modern application launcher for Wayland compositors (Hyprland, Sway, etc.)
+A modern, highly customizable application launcher designed specifically for Wayland compositors, with a focus on Hyprland. HyprMenu offers a sleek interface with extensive theming options, grid and list views, and seamless integration with your desktop environment.
 
-## Features
-- **Fully customizable appearance** via `hyprmenu.conf`
-- **Outer and inner borders**: independently style the menu's outer and inner borders
-- **Grid and list views**: switchable, with configurable columns, spacing, and item size
-- **Flat, icon-only system buttons** (power, lock, etc.)
-- **Alphabetically organized config** for easy navigation
-- **Per-section options** for Window, Grid, List, AppEntry, Category, Search, SystemButton, Behavior, Style, Layout
-- **Live reload**: changes to config are applied instantly
-- **Dark mode** and transparency support
-- **Extensive color and spacing options**
+## 🌟 Key Features
 
-## Configuration
-All options are set in `~/.config/hyprmenu/hyprmenu.conf`. Sections and keys are alphabetical for clarity.
+- **Modern Interface**: Clean, minimal design with support for blur effects and transparency
+- **Dual View Modes**: Switch between grid and list views for different use cases
+- **Smart Search**: Instant search with automatic focus on launch
+- **System Controls**: Quick access to power, lock, and other system functions
+- **Live Configuration**: Changes apply instantly without restart
+- **Dark Mode**: Built-in dark theme with customizable colors
+- **Hyprland Integration**: Native support for Hyprland's blur and transparency effects
 
-### Example: Borders
-```ini
-[Window]
-outer_border_width=3
-outer_border_color=#888888
-outer_border_radius=16
-inner_border_width=2
-inner_border_color=#444444
-inner_border_radius=12
-```
+## 🚀 Quick Start
 
-### Major Sections and Options
-- **[Window]**: Outer/inner borders, background, padding, shadow, alignment
-- **[Grid]**: Grid columns, item size, spacing, margins, alignment
-- **[List]**: List item size, spacing, margins, alignment
-- **[AppEntry]**: Icon size, font sizes, colors, padding, hover/active colors
-- **[Category]**: Background, text color, font, padding, separators
-- **[Search]**: Bar color, font, padding, icon, placeholder, focus border
-- **[SystemButton]**: Icon color, hover/active color, size, spacing, flat style
-- **[Behavior]**: Close on click, super key, app launch, focus, show/hide UI elements
-- **[Style]**: Global background, blur, transparency, AGS effects
-- **[Layout]**: Window size, margins, position, offsets
+1. **Installation**:
+   ```bash
+   # Clone the repository
+   git clone https://github.com/yourusername/HyprMenu.git
+   cd HyprMenu
 
-### System Buttons: Flat/Icon-Only
-System buttons are styled to be flat and icon-only by default. You can further customize their color and hover effect in the `[SystemButton]` section.
+   # Build and install
+   sudo ./build.sh --install
+   ```
+   This command will:
+   - Compile the application
+   - Install necessary dependencies
+   - Copy the binary to your system
+   - Generate a default configuration file
 
-### Example Config Snippet
-```ini
-[Window]
-outer_border_width=3
-outer_border_color=#888888
-outer_border_radius=16
-inner_border_width=2
-inner_border_color=#444444
-inner_border_radius=12
-background_opacity=0.85
-background_blur=5.0
-shadow_color=rgba(0,0,0,0.3)
-shadow_radius=20
+2. **Configuration**:
+   - Your config file will be created at `~/.config/hyprmenu/hyprmenu.conf`
+   - Edit this file to customize the appearance and behavior
+   - Changes are applied instantly - no restart needed
 
-[Grid]
-grid_columns=5
-grid_item_size=100
-row_spacing=12
-column_spacing=12
+3. **Hyprland Setup**:
+   Add these rules to `~/.config/hypr/hyprland.conf` for blur effects:
+   ```conf
+   layerrule = blur,hyprmenu
+   layerrule = xray,hyprmenu
+   layerrule = ignorezero
+   ```
 
-[SystemButton]
-icon_color=#fff
-hover_color=rgba(255,255,255,0.08)
-background_color=transparent
-corner_radius=0
-```
+## ⚙️ Configuration Guide
 
-## Customization Tips
-- **Change border colors/thickness**: Edit `outer_border_*` and `inner_border_*` in `[Window]`.
-- **Switch between grid/list**: Use the toggle button or set defaults in `[Grid]`/`[List]`.
-- **Make system buttons flat**: Use the default config or set `background_color=transparent` and `corner_radius=0` in `[SystemButton]`.
-- **Adjust spacing and padding**: All major sections have `padding`, `margin`, or `spacing` options.
-- **Colors**: All color values support hex, rgb(), or rgba().
+The configuration file (`hyprmenu.conf`) is organized into logical sections. Here's what each section controls:
 
-## Getting Started
-1. Copy or generate a config: `~/.config/hyprmenu/hyprmenu.conf`
-2. Edit the config to your liking (see above for options)
-3. Run HyprMenu and enjoy your custom launcher!
+### [Window]
+Controls the main window appearance:
+- `window_width` and `window_height`: Size of the menu
+- `window_corner_radius`: Rounded corners
+- `window_background_opacity`: Overall transparency (0.0 to 1.0)
+- `window_background_blur`: Blur strength
+- `window_border_width` and `window_border_color`: Outer border settings
 
----
+### [Grid]
+Settings for grid view mode:
+- `grid_columns`: Number of columns
+- `grid_item_size`: Size of each app icon
+- `grid_row_spacing` and `grid_column_spacing`: Space between items
+- `grid_item_corner_radius`: Rounded corners for items
 
-For more details, see the comments in the config file or open an issue for help.
+### [List]
+Settings for list view mode:
+- `list_item_size`: Height of each item
+- `list_row_spacing`: Space between items
+- `list_item_corner_radius`: Rounded corners for items
 
-## Requirements
+### [Search]
+Search bar customization:
+- `search_background_color`: Background color
+- `search_text_color`: Text color
+- `search_font_size`: Text size
+- `search_corner_radius`: Rounded corners
+- `search_placeholder_text`: Placeholder text
 
-- Wayland compositor (specifically designed for Hyprland)
+### [Behavior]
+Control how the menu behaves:
+- `close_on_click_outside`: Close when clicking outside
+- `close_on_super_key`: Close when pressing Super key
+- `focus_search_on_open`: Auto-focus search on launch
+- `show_categories`: Show app categories
+- `show_descriptions`: Show app descriptions
+- `show_icons`: Show app icons
+
+### [SystemButton]
+System control buttons (power, lock, etc.):
+- `system_button_size`: Size of buttons
+- `system_button_spacing`: Space between buttons
+- `system_button_icon_color`: Icon color
+- `system_button_hover_color`: Hover effect color
+
+## 🎨 Theming
+
+HyprMenu supports extensive theming options:
+- **Color Formats**: Use hex (`#RRGGBB`), RGB (`rgb(r,g,b)`), or RGBA (`rgba(r,g,b,a)`)
+- **Opacity**: Control transparency for each element (0.0 to 1.0)
+- **Blur**: Adjust blur strength for background effects
+- **Borders**: Customize inner and outer borders independently
+- **Shadows**: Add and customize drop shadows
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how you can help:
+
+1. **Report Issues**:
+   - Found a bug? Open an issue with detailed steps to reproduce
+   - Have a feature request? Let us know!
+
+2. **Submit Pull Requests**:
+   - Fork the repository
+   - Create a feature branch
+   - Make your changes
+   - Submit a pull request
+
+3. **Development Setup**:
+   ```bash
+   # Install dependencies
+   sudo pacman -S gtk4 gtk4-layer-shell
+
+   # Build without installing
+   ./build.sh
+
+   # Run from source
+   ./build/hyprmenu
+   ```
+
+## 📝 Requirements
+
+- Wayland compositor (Hyprland recommended)
 - GTK4
 - gtk4-layer-shell
 
-## Important Note
+## ⚠️ Important Note
 
-**This application is WAYLAND-ONLY**. It will not work on X11. The application requires a Wayland compositor (specifically Hyprland) and GTK Layer Shell to function properly.
+This application is **Wayland-only** and will not work on X11. It requires a Wayland compositor (specifically Hyprland) and GTK Layer Shell to function properly.
 
-## Features
+## 📄 License
 
-- Modern, clean interface
-- System control buttons (logout, shutdown, reboot, etc.)
-- Configurable positioning
-- Search functionality
-- Dark theme by default
-- Support for both grid and list view modes
-- **Full color theming:** Every part of the menu (background, border, search, categories, app entries, system buttons, highlights, separators, scrollbar, shadow, etc.) can be themed via the config file.
-- **Pywal & AGS color support:** Optionally auto-theme the menu using pywal or AGS color scripts, or override any color manually.
-- **Config auto-update:** The config file is auto-regenerated to include all new options when the app is updated.
-- **VSCode color picker friendly:** All color options are compatible with color pickers in editors like VSCode.
-- **Dynamic grid columns:** Set the number of app columns in grid view (`grid_columns`), and the menu will auto-resize.
-- **Grid/List item sizing:** Control the size of app items in both grid (`grid_item_size`) and list (`list_item_size`) views.
-- **Proportional icon sizing:** Icons scale automatically with item size in both views.
-- **All settings exposed:** All theming and layout options are exposed in the config and auto-documented.
-- **No breaking changes:** All new features are backward compatible.
-
-## Building
-
-```bash
-sudo ./build.sh --install
-```
-
-## Installation
-
-After building, the application will be installed automatically.
-
-## License
-
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License. Feel free to use, modify, and distribute it as you wish.
