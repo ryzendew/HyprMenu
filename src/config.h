@@ -185,6 +185,7 @@ gboolean hyprmenu_config_load();
 gboolean hyprmenu_config_save();
 gboolean hyprmenu_config_save_with_error(GError **error);
 void hyprmenu_config_apply_css();
+void hyprmenu_apply_theme_colors(HyprMenuConfig *config);
 
 // Position utility functions
 const gchar* hyprmenu_position_to_string(HyprMenuPosition position);

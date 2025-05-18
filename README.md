@@ -108,6 +108,20 @@ HyprMenu supports extensive theming options:
 - **Borders**: Customize inner and outer borders independently
 - **Shadows**: Add and customize drop shadows
 
+### Automatic Theme Detection
+HyprMenu automatically detects and applies colors from:
+- **Pywal**: Uses colors from `~/.cache/wal/colors`
+- **AGS Auto Color**: Automatically applies colors from your AGS configuration
+- **Gradience**: Uses colors from your Gradience theme
+
+The priority order is:
+1. Pywal colors (if available)
+2. AGS colors
+3. Gradience colors
+4. Default colors from config file
+
+You can still override any colors in your config file if desired.
+
 ## 🤝 Contributing
 
 We welcome contributions! Here's how you can help:

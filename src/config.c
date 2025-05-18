@@ -8,6 +8,9 @@
 // Global config instance
 HyprMenuConfig *config = NULL;
 
+// Global pywal color instance
+PywalColors pywal_colors = {0};
+
 // Position mapping
 static const char* position_names[] = {
   "top-left",

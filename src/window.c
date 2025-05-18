@@ -780,6 +780,9 @@ hyprmenu_window_init (HyprMenuWindow *self)
   /* Apply custom CSS from configuration */
   hyprmenu_config_apply_css();
   
+  /* Apply theme colors */
+  hyprmenu_apply_theme_colors(config);
+  
   /* Set dark color scheme */
   GtkSettings *settings = gtk_settings_get_default();
   g_object_set(settings, "gtk-application-prefer-dark-theme", TRUE, NULL);

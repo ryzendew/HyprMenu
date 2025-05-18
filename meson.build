@@ -32,6 +32,7 @@ sources = [
   'src/config.c',
   'src/list_view.c',
   'src/hyprland.c',
+  'src/theme.c',
 ]
 
 # Header files for installation
