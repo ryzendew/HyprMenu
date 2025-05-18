@@ -11,13 +11,14 @@ A modern, highly customizable application launcher designed specifically for Way
 - **Live Configuration**: Changes apply instantly without restart
 - **Dark Mode**: Built-in dark theme with customizable colors
 - **Hyprland Integration**: Native support for Hyprland's blur and transparency effects
+- **Keyboard Navigation**: Navigate through applications using arrow keys and launch with Space
 
 ## 🚀 Quick Start
 
 1. **Installation**:
    ```bash
    # Clone the repository
-   git clone https://github.com/yourusername/HyprMenu.git
+   git clone https://github.com/ryzendew/HyprMenu.git
    cd HyprMenu
 
    # Build and install
@@ -90,6 +91,13 @@ System control buttons (power, lock, etc.):
 - `system_button_spacing`: Space between buttons
 - `system_button_icon_color`: Icon color
 - `system_button_hover_color`: Hover effect color
+
+### Keyboard Navigation
+HyprMenu supports full keyboard navigation:
+- Use **Arrow Keys** (↑, ↓, ←, →) to move between applications
+- Press **Space** to launch the selected application
+- **Tab** to switch between search and application list
+- **Escape** to close the menu
 
 ## 🎨 Theming
 
