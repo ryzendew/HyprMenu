@@ -616,6 +616,11 @@ hyprmenu_config_save_with_error(GError **error)
   g_key_file_set_comment(keyfile, "Layout", "left_margin", "Margin from the left of the screen", NULL);
   g_key_file_set_boolean(keyfile, "Layout", "center_window", config->center_window);
   g_key_file_set_comment(keyfile, "Layout", "center_window", "Whether to center the window on screen", NULL);
+  
+  // Save menu position
+  g_key_file_set_string(keyfile, "Layout", "menu_position", hyprmenu_position_to_string(config->menu_position));
+  g_key_file_set_comment(keyfile, "Layout", "menu_position", "Menu position (top-left, top-center, top-right, bottom-left, bottom-center, bottom-right, center)", NULL);
+  
   g_key_file_set_integer(keyfile, "Layout", "bottom_offset", config->bottom_offset);
   g_key_file_set_comment(keyfile, "Layout", "bottom_offset", "Offset from bottom for dock/panel (0 to respect reserved space)", NULL);
   g_key_file_set_integer(keyfile, "Layout", "top_offset", config->top_offset);
