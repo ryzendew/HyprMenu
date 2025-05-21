@@ -311,18 +311,10 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
   g_print("Config updated: grid_hexpand now = %s\n", config->grid_hexpand ? "true" : "false");
   
   /* Save configuration immediately */
-  GError *error = NULL;
-  gboolean saved = hyprmenu_config_save_with_error(&error);
-  if (!saved) {
-    g_warning("Failed to save configuration: %s", error ? error->message : "Unknown error");
-    g_clear_error(&error);
-  } else {
-    g_print("Configuration saved successfully with view mode: %s\n", 
-            config->grid_hexpand ? "grid" : "list");
-    
-    // Make absolutely sure changes are written to disk
-    fsync(0);  // Use fsync on stdout instead of sync()
-  }
+  hyprmenu_config_save(config);
+  g_print("Configuration saved successfully with view mode: %s\n", 
+          config->grid_hexpand ? "grid" : "list");
+  fsync(0);  // Use fsync on stdout instead of sync()
   
   /* Verify the config value was actually changed */
   g_print("Double-checking config->grid_hexpand = %s\n", config->grid_hexpand ? "true" : "false");
@@ -348,7 +340,7 @@ hyprmenu_app_grid_toggle_view (HyprMenuAppGrid *self)
       hyprmenu_category_list_set_grid_view(HYPRMENU_CATEGORY_LIST(self->category_list), TRUE);
       
       // Save the config again if we had to revert
-      hyprmenu_config_save();
+      hyprmenu_config_save(config);
     } else {
       g_print("Setting view to list\n");
       new_view = self->list_view;

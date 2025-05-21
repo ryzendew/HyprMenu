@@ -173,6 +173,42 @@ typedef struct _HyprMenuConfig {
   // Hyprland-specific settings
   gboolean use_hyprland_corner_fix;
   int hyprland_corner_radius;
+
+  // Font options
+  char *app_name_font_family;
+  char *app_desc_font_family;
+  char *grid_item_font_family;
+  char *list_item_font_family;
+  int app_name_font_weight;
+  int app_desc_font_weight;
+  int grid_item_font_weight;
+  int list_item_font_weight;
+  char *app_name_font_style;
+  char *app_desc_font_style;
+  char *grid_item_font_style;
+  char *list_item_font_style;
+
+  // Grid hover/active
+  char *grid_item_hover_color;
+  char *grid_item_active_color;
+  int grid_item_padding;
+
+  // List hover/active
+  char *list_item_hover_color;
+  char *list_item_active_color;
+  int list_item_padding;
+
+  // Category hover/active
+  char *category_hover_color;
+  char *category_active_color;
+  int category_separator_thickness;
+
+  // Scrollbar
+  char *scrollbar_color;
+  char *scrollbar_hover_color;
+  char *scrollbar_active_color;
+  int scrollbar_width;
+  int scrollbar_corner_radius;
 } HyprMenuConfig;
 
 // Global config instance
@@ -181,11 +217,11 @@ extern HyprMenuConfig *config;
 // Function declarations
 gboolean hyprmenu_config_init();
 void hyprmenu_config_free();
-gboolean hyprmenu_config_load();
-gboolean hyprmenu_config_save();
+void hyprmenu_config_load(HyprMenuConfig *config);
+void hyprmenu_config_save(HyprMenuConfig *config);
 gboolean hyprmenu_config_save_with_error(GError **error);
 void hyprmenu_config_apply_css();
-void hyprmenu_apply_theme_colors(HyprMenuConfig *config);
+// void hyprmenu_apply_theme_colors(HyprMenuConfig *config);
 
 // Position utility functions
 const gchar* hyprmenu_position_to_string(HyprMenuPosition position);

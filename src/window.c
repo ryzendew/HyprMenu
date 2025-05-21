@@ -503,9 +503,11 @@ hyprmenu_window_init (HyprMenuWindow *self)
   gtk_window_set_default_size(GTK_WINDOW(self), config->window_width, config->window_height);
   gtk_window_set_resizable(GTK_WINDOW(self), FALSE);
   gtk_window_set_decorated(GTK_WINDOW(self), FALSE);
-  
-  /* Initialize layer shell */
+
+  /* Transparency: nothing special needed in GTK4, just use RGBA/transparent backgrounds in CSS */
   GdkDisplay *display = gtk_widget_get_display(GTK_WIDGET(self));
+
+  /* Initialize layer shell */
   if (!GDK_IS_WAYLAND_DISPLAY(display)) {
     g_error("HyprMenu requires Wayland");
     return;
@@ -534,13 +536,13 @@ hyprmenu_window_init (HyprMenuWindow *self)
     GtkStyleContext *style_context = gtk_widget_get_style_context(GTK_WIDGET(self));
     GtkCssProvider *provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(provider, 
-                                   "window, .background { "
+                                   "window { "
+                                   "  background-color: transparent; "
                                    "  border-radius: 16px; "
                                    "  box-shadow: none; "
-                                   "  background-color: transparent; "
                                    "}\n"
                                    ".hyprmenu-window { "
-                                   "  background-color: rgba(0, 0, 0, 0.0); "
+                                   "  background-color: transparent; "
                                    "  border-radius: 16px; "
                                    "}\n"
                                    ".hyprmenu-content-box { "
@@ -548,9 +550,11 @@ hyprmenu_window_init (HyprMenuWindow *self)
                                    "  border-radius: 14px; "
                                    "}\n"
                                    ".hyprmenu-main-box { "
+                                   "  background-color: transparent; "
                                    "  border-radius: 12px; "
                                    "}\n"
                                    ".hyprmenu-content-container { "
+                                   "  background-color: transparent; "
                                    "  border-radius: 12px; "
                                    "}\n"
                                    ,
@@ -779,9 +783,6 @@ hyprmenu_window_init (HyprMenuWindow *self)
   
   /* Apply custom CSS from configuration */
   hyprmenu_config_apply_css();
-  
-  /* Apply theme colors */
-  hyprmenu_apply_theme_colors(config);
   
   /* Set dark color scheme */
   GtkSettings *settings = gtk_settings_get_default();

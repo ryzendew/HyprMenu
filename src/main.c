@@ -21,10 +21,7 @@ on_activate(GtkApplication *app)
   g_message("Activating application");
   
   // Load config first
-  if (!hyprmenu_config_load()) {
-    g_critical("Failed to load configuration");
-    return;
-  }
+  hyprmenu_config_load(config);
   g_message("Configuration loaded successfully");
   
   // Create window
@@ -47,7 +44,7 @@ on_shutdown(GApplication *app, gpointer user_data)
   (void)user_data;  // Silence unused parameter warning
   
   g_message("Shutting down application");
-  hyprmenu_config_save();
+  hyprmenu_config_save(config);
   g_message("Configuration saved");
 }
 
