@@ -31,7 +31,6 @@ sources = [
   'src/app_entry.c',
   'src/config.c',
   'src/list_view.c',
-  'src/hyprland.c',
 ]
 
 # Header files for installation
@@ -42,7 +41,6 @@ headers = [
   'src/app_entry.h',
   'src/config.h',
   'src/list_view.h',
-  'src/hyprland.h',
 ]
 
 # Build configuration

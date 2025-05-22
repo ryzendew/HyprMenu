@@ -168,11 +168,14 @@ typedef struct _HyprMenuConfig {
   gboolean blur_background;
   int blur_strength;
   double opacity;
+<<<<<<< HEAD
   int max_recent_apps;  // Maximum number of recent apps to show
   
   // Hyprland-specific settings
   gboolean use_hyprland_corner_fix;
   int hyprland_corner_radius;
+=======
+>>>>>>> parent of a64de2c (Corner artifacts sadly)
 } HyprMenuConfig;
 
 // Global config instance
