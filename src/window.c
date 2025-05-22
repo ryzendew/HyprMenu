@@ -846,6 +846,12 @@ hyprmenu_window_show (HyprMenuWindow *self)
 {
   hyprmenu_app_grid_refresh (HYPRMENU_APP_GRID (self->app_grid));
   gtk_window_present (GTK_WINDOW (self));
+  
+  // Directly focus the search entry when showing the window
+  if (config->focus_search_on_open) {
+    // Use a short delay to ensure the window is fully mapped before focusing
+    g_timeout_add(50, (GSourceFunc)gtk_widget_grab_focus, self->search_entry);
+  }
 }
 
 static void

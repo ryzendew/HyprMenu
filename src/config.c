@@ -192,7 +192,7 @@ set_defaults(HyprMenuConfig *config)
   config->close_on_click_outside = TRUE;
   config->close_on_super_key = TRUE;
   config->close_on_app_launch = TRUE;
-  config->focus_search_on_open = TRUE;
+  config->focus_search_on_open = TRUE;  // Ensure this is TRUE
   config->close_on_escape = TRUE;
   config->close_on_focus_out = TRUE;
   config->show_categories = TRUE;
