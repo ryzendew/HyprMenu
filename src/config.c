@@ -554,7 +554,6 @@ hyprmenu_config_load()
     }
   }
   
-<<<<<<< HEAD
   // Hyprland-specific settings
   if (g_key_file_has_group(keyfile, "Hyprland")) {
     if (g_key_file_has_key(keyfile, "Hyprland", "use_hyprland_corner_fix", NULL)) {
@@ -570,9 +569,6 @@ hyprmenu_config_load()
   if (config->max_recent_apps <= 0) {
     config->max_recent_apps = 10;  // Default if not set or invalid
   }
-  
-=======
->>>>>>> parent of a64de2c (Corner artifacts sadly)
   // Save config back if any missing options
   if (missing_option) {
     hyprmenu_config_save();
@@ -885,7 +881,6 @@ hyprmenu_config_save_with_error(GError **error)
   g_key_file_set_boolean(keyfile, "Behavior", "blur_background", config->blur_background);
   g_key_file_set_comment(keyfile, "Behavior", "blur_background", "Enable background blur", NULL);
   g_key_file_set_integer(keyfile, "Behavior", "blur_strength", config->blur_strength);
-<<<<<<< HEAD
   g_key_file_set_comment(keyfile, "Behavior", "blur_strength", "Background blur strength", NULL);
   g_key_file_set_integer(keyfile, "Behavior", "max_recent_apps", config->max_recent_apps);
   g_key_file_set_comment(keyfile, "Behavior", "max_recent_apps", "Maximum number of recent apps to show", NULL);
@@ -906,10 +901,14 @@ hyprmenu_config_save_with_error(GError **error)
   g_key_file_set_integer(keyfile, "Transparency", "shadow_radius", config->window_shadow_radius);
   g_key_file_set_comment(keyfile, "Transparency", "shadow_radius", "Shadow radius", NULL);
 
-=======
-  g_key_file_set_double(keyfile, "Behavior", "opacity", config->opacity);
-  
->>>>>>> parent of a64de2c (Corner artifacts sadly)
+  // Hyprland section
+  g_key_file_set_comment(keyfile, "Hyprland", NULL,
+    "# Hyprland-specific settings", NULL);
+  g_key_file_set_boolean(keyfile, "Hyprland", "use_hyprland_corner_fix", config->use_hyprland_corner_fix);
+  g_key_file_set_comment(keyfile, "Hyprland", "use_hyprland_corner_fix", "Enable corner artifact fix for Hyprland", NULL);
+  g_key_file_set_integer(keyfile, "Hyprland", "hyprland_corner_radius", config->hyprland_corner_radius);
+  g_key_file_set_comment(keyfile, "Hyprland", "hyprland_corner_radius", "Corner radius to use with Hyprland fix", NULL);
+
   // Save to file
   g_print("Writing config to: %s\n", config->config_file);
   g_autofree char *data = g_key_file_to_data(keyfile, NULL, error);
@@ -964,11 +963,7 @@ hyprmenu_config_apply_css()
     "  border-radius: %dpx;\n"
     "  border: %dpx solid %s;\n"
     "  padding: %dpx;\n"
-<<<<<<< HEAD
     "  opacity: %.2f;\n"
-=======
-    "  overflow: hidden;\n"
->>>>>>> parent of a64de2c (Corner artifacts sadly)
     "}\n\n",
     config->outer_border_radius,
     // Handle empty background color with transparency
@@ -985,7 +980,6 @@ hyprmenu_config_apply_css()
     config->window_padding,
     config->opacity);
 
-<<<<<<< HEAD
   // Content box style (wrapper for the entire content)
   g_string_append_printf(css,
     ".hyprmenu-content-box {\n"
@@ -996,30 +990,17 @@ hyprmenu_config_apply_css()
     config->outer_border_radius - 2,
     config->opacity);
 
-=======
->>>>>>> parent of a64de2c (Corner artifacts sadly)
   // Main box styles
   g_string_append_printf(css,
     ".hyprmenu-main-box {\n"
     "  background-color: transparent;\n"
     "  border-radius: %dpx;\n"
     "  padding: %dpx;\n"
-<<<<<<< HEAD
     "  opacity: %.2f;\n"
     "}\n\n",
     config->outer_border_radius,
-    config->outer_border_radius,
-    config->outer_border_radius,
-    config->outer_border_radius,
-    config->outer_border_radius,
     config->window_padding,
     config->opacity);
-=======
-    "  overflow: hidden;\n"
-    "}\n\n",
-    config->inner_border_radius,
-    config->window_padding);
->>>>>>> parent of a64de2c (Corner artifacts sadly)
 
   // Search styles
   g_string_append_printf(css,
@@ -1036,15 +1017,8 @@ hyprmenu_config_apply_css()
     "  min-height: %dpx;\n"
     "  padding-left: %dpx;\n"
     "  box-shadow: none;\n"
-<<<<<<< HEAD
     "  margin: 4px 4px 8px 4px;\n"
     "  opacity: %.2f;\n"
-=======
-    "  margin-start: 4px;\n"
-    "  margin-end: 4px;\n"
-    "  margin-top: 4px;\n"
-    "  margin-bottom: 8px;\n"
->>>>>>> parent of a64de2c (Corner artifacts sadly)
     "}\n\n"
     ".hyprmenu-search:focus {\n"
     "  border-color: rgba(255,255,255,0.4);\n"
@@ -1080,11 +1054,7 @@ hyprmenu_config_apply_css()
     "  border-color: %s;\n"
     "  border-style: solid;\n"
     "  padding: 8px;\n"
-<<<<<<< HEAD
     "  opacity: %.2f;\n"
-=======
-    "  overflow: hidden;\n"
->>>>>>> parent of a64de2c (Corner artifacts sadly)
     "}\n\n",
     config->inner_border_radius,
     config->inner_border_width,
@@ -1094,24 +1064,14 @@ hyprmenu_config_apply_css()
   // App grid styles
   g_string_append_printf(css,
     ".hyprmenu-app-grid {\n"
-<<<<<<< HEAD
     "  margin: %dpx %dpx %dpx %dpx;\n"
     "  opacity: %.2f;\n"
-=======
-    "  margin-top: %dpx;\n"
-    "  margin-bottom: %dpx;\n"
-    "  margin-start: %dpx;\n"
-    "  margin-end: %dpx;\n"
->>>>>>> parent of a64de2c (Corner artifacts sadly)
     "}\n\n",
     config->grid_margin_top,
     config->grid_margin_bottom,
     config->grid_margin_start,
-<<<<<<< HEAD
+    config->grid_margin_end,
     config->grid_opacity);
-=======
-    config->grid_margin_end);
->>>>>>> parent of a64de2c (Corner artifacts sadly)
 
   // App entry styles
   g_string_append_printf(css,
