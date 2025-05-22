@@ -367,6 +367,65 @@ hyprmenu_config_load()
     config->window_valign = g_key_file_get_string(keyfile, "Style", "window_valign", NULL);
   }
   
+  // Window section (modern format, takes precedence over Style section)
+  if (g_key_file_has_group(keyfile, "Window")) {
+    if (g_key_file_has_key(keyfile, "Window", "background_color", NULL)) {
+      g_free(config->window_background_color);
+      config->window_background_color = g_key_file_get_string(keyfile, "Window", "background_color", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Window", "background_opacity", NULL)) {
+      config->window_background_opacity = g_key_file_get_double(keyfile, "Window", "background_opacity", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Window", "background_blur", NULL)) {
+      config->window_background_blur = g_key_file_get_double(keyfile, "Window", "background_blur", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Window", "corner_radius", NULL)) {
+      config->window_corner_radius = g_key_file_get_integer(keyfile, "Window", "corner_radius", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Window", "halign", NULL)) {
+      g_free(config->window_halign);
+      config->window_halign = g_key_file_get_string(keyfile, "Window", "halign", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Window", "valign", NULL)) {
+      g_free(config->window_valign);
+      config->window_valign = g_key_file_get_string(keyfile, "Window", "valign", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Window", "shadow_color", NULL)) {
+      g_free(config->window_shadow_color);
+      config->window_shadow_color = g_key_file_get_string(keyfile, "Window", "shadow_color", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Window", "shadow_radius", NULL)) {
+      config->window_shadow_radius = g_key_file_get_integer(keyfile, "Window", "shadow_radius", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Window", "opacity", NULL)) {
+      config->opacity = g_key_file_get_double(keyfile, "Window", "opacity", NULL);
+    }
+  }
+  
+  // Border section
+  if (g_key_file_has_group(keyfile, "Border")) {
+    if (g_key_file_has_key(keyfile, "Border", "inner_border_color", NULL)) {
+      g_free(config->inner_border_color);
+      config->inner_border_color = g_key_file_get_string(keyfile, "Border", "inner_border_color", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Border", "inner_border_radius", NULL)) {
+      config->inner_border_radius = g_key_file_get_integer(keyfile, "Border", "inner_border_radius", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Border", "inner_border_width", NULL)) {
+      config->inner_border_width = g_key_file_get_integer(keyfile, "Border", "inner_border_width", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Border", "outer_border_color", NULL)) {
+      g_free(config->outer_border_color);
+      config->outer_border_color = g_key_file_get_string(keyfile, "Border", "outer_border_color", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Border", "outer_border_radius", NULL)) {
+      config->outer_border_radius = g_key_file_get_integer(keyfile, "Border", "outer_border_radius", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Border", "outer_border_width", NULL)) {
+      config->outer_border_width = g_key_file_get_integer(keyfile, "Border", "outer_border_width", NULL);
+    }
+  }
+  
   // Grid options
   if (g_key_file_has_group(keyfile, "Grid")) {
     config->grid_margin_start = g_key_file_get_integer(keyfile, "Grid", "margin_start", NULL);
@@ -454,7 +513,6 @@ hyprmenu_config_load()
     config->search_corner_radius = g_key_file_get_integer(keyfile, "Search", "corner_radius", NULL);
     g_free(config->search_text_color);
     config->search_text_color = g_key_file_get_string(keyfile, "Search", "text_color", NULL);
-    config->search_font_size = g_key_file_get_integer(keyfile, "Search", "font_size", NULL);
     g_free(config->search_font_family);
     config->search_font_family = g_key_file_get_string(keyfile, "Search", "font_family", NULL);
     config->search_padding = g_key_file_get_integer(keyfile, "Search", "padding", NULL);
@@ -564,6 +622,29 @@ hyprmenu_config_load()
     }
   }
   
+  // Transparency section
+  if (g_key_file_has_group(keyfile, "Transparency")) {
+    if (g_key_file_has_key(keyfile, "Transparency", "enabled", NULL)) {
+      config->blur_background = g_key_file_get_boolean(keyfile, "Transparency", "enabled", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Transparency", "alpha", NULL)) {
+      config->opacity = g_key_file_get_double(keyfile, "Transparency", "alpha", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Transparency", "blur", NULL)) {
+      config->blur_background = g_key_file_get_boolean(keyfile, "Transparency", "blur", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Transparency", "shadow", NULL)) {
+      config->show_shadow = g_key_file_get_boolean(keyfile, "Transparency", "shadow", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Transparency", "shadow_color", NULL)) {
+      g_free(config->window_shadow_color);
+      config->window_shadow_color = g_key_file_get_string(keyfile, "Transparency", "shadow_color", NULL);
+    }
+    if (g_key_file_has_key(keyfile, "Transparency", "shadow_radius", NULL)) {
+      config->window_shadow_radius = g_key_file_get_integer(keyfile, "Transparency", "shadow_radius", NULL);
+    }
+  }
+  
   // Behavior options
   config->max_recent_apps = g_key_file_get_integer(keyfile, "Behavior", "max_recent_apps", NULL);
   if (config->max_recent_apps <= 0) {
@@ -608,6 +689,8 @@ hyprmenu_config_save_with_error(GError **error)
   g_key_file_set_comment(keyfile, "Layout", "left_margin", "Margin from the left of the screen", NULL);
   g_key_file_set_boolean(keyfile, "Layout", "center_window", config->center_window);
   g_key_file_set_comment(keyfile, "Layout", "center_window", "Whether to center the window on screen", NULL);
+  g_key_file_set_string(keyfile, "Layout", "menu_position", hyprmenu_position_to_string(config->menu_position));
+  g_key_file_set_comment(keyfile, "Layout", "menu_position", "Position of the menu (top-left, top-center, top-right, bottom-left, bottom-center, bottom-right, center)", NULL);
   g_key_file_set_integer(keyfile, "Layout", "bottom_offset", config->bottom_offset);
   g_key_file_set_comment(keyfile, "Layout", "bottom_offset", "Offset from bottom for dock/panel (0 to respect reserved space)", NULL);
   g_key_file_set_integer(keyfile, "Layout", "top_offset", config->top_offset);
